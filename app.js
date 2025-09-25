@@ -1,5 +1,9 @@
 /* =========================================================
-   Tessa Bennion — app.js (intro 6s hold + hard remove, menu autoclose, profile→about)
+   Tessa Bennion — app.js
+   - intro 6s hold + hard remove
+   - menu autoclose
+   - profile→about
+   - grouped rows (images/videos)
 ========================================================= */
 
 /* ------------ List your files (exact names) ------------ */
@@ -38,7 +42,7 @@ function ext(name){ return (name.split(".").pop() || "").toLowerCase(); }
 function isVideo(name){ return ext(name) === "mp4"; }
 function baseName(name){ return name.replace(/\.[a-z0-9]+$/i, ""); }
 
-/* Series key: PortraitB1 → "PortraitB" (letters + ONE capital + digits) */
+/* Series key: PortraitB1 → "PortraitB" */
 function seriesKey(name){
   const b = baseName(name);
   const m = b.match(/^([A-Za-z]+[A-Z])[0-9]+$/);
@@ -125,7 +129,7 @@ function renderGroupedRows(mountId, fileList) {
   });
   mount.appendChild(frag);
 
-  // Desktop convenience: vertical wheel scroll nudges row horizontally
+  // Desktop: vertical wheel scroll nudges row horizontally
   $$(".row", mount).forEach(row => {
     on(row, "wheel", (e) => {
       if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
@@ -162,10 +166,9 @@ function wireLightbox() {
 
 /* ---------------------- Smooth section nav --------------------- */
 function smoothNav() {
-  const headerLinks = $$(".nav a");            // legacy hidden; harmless
   const dockLinks   = $$(".bottom-dock a");
-  const menuLinks   = $$(".menu-dropdown a");  // dropdown links
-  const allLinks    = [...headerLinks, ...dockLinks, ...menuLinks];
+  const menuLinks   = $$("#menuDropdown a");
+  const allLinks    = [...dockLinks, ...menuLinks];
 
   allLinks.forEach(a =>
     on(a, "click", (e) => {
@@ -204,28 +207,24 @@ function menuControls(){
   const close = () => { btn.setAttribute('aria-expanded','false'); drop.hidden = true;  veil.hidden = true;  };
   const toggle = () => (btn.getAttribute('aria-expanded') === 'true' ? close() : open());
 
-  // Force closed on load (in case browser restores state)
-  close();
+  close(); // force closed on load
 
   btn.addEventListener('click', toggle);
   veil.addEventListener('click', close);
 
-  // Auto-close on scroll, resize, or hashchange
   window.addEventListener('scroll', close, { passive: true });
   window.addEventListener('resize', close);
   window.addEventListener('hashchange', close);
 
-  // Close when picking a link
   drop.querySelectorAll('a').forEach(a=> a.addEventListener('click', close));
 }
 
 /* ------------------------- Intro video ------------------------- */
-/* Show ~6s, then fade and remove completely */
 function introFlow() {
   const intro = $("#intro");
   const vid   = $("#introVideo");
   const skip  = $("#skipIntro");
-  const SHOW_MS = 6000; // desired visible time
+  const SHOW_MS = 6000;
 
   if (!intro || !vid) return;
 
@@ -235,14 +234,9 @@ function introFlow() {
   const hardHide = () => {
     if (!intro || intro.classList.contains("hide")) return;
     intro.classList.add("hide");
-    // Remove intro from DOM after transition so no overlay remains
     const onTransEnd = () => {
       intro.removeEventListener("transitionend", onTransEnd);
-      try {
-        vid.pause();
-        vid.removeAttribute("src");
-        vid.load();
-      } catch {}
+      try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {}
       intro.remove();
     };
     intro.addEventListener("transitionend", onTransEnd);
@@ -250,28 +244,16 @@ function introFlow() {
 
   const scheduleHide = () => {
     clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => {
-      if (!ended) hardHide();
-    }, SHOW_MS);
+    hideTimer = setTimeout(() => { if (!ended) hardHide(); }, SHOW_MS);
   };
 
-  // Prefer starting the 6s timer when the video is actually playing
   on(vid, "playing", scheduleHide);
   on(vid, "canplay", () => { if (vid.paused) vid.play().catch(()=>{}); });
   on(vid, "loadeddata", () => { if (vid.paused) vid.play().catch(()=>{}); });
+  setTimeout(() => { if (!hideTimer) scheduleHide(); }, 1500);
 
-  // If for some reason "playing" never fires, start a fallback timer after 1.5s
-  setTimeout(() => {
-    if (!hideTimer) scheduleHide();
-  }, 1500);
-
-  // If video ends early, fade immediately
   on(vid, "ended", () => { ended = true; hardHide(); });
-
-  // Manual skip
   on(skip, "click", hardHide);
-
-  // (Removed: auto-dismiss on small scroll to prevent accidental early hide)
 }
 
 /* ---------------- Profile → About link ---------------- */
@@ -299,4 +281,3 @@ function boot() {
 }
 
 document.addEventListener("DOMContentLoaded", boot);
-
