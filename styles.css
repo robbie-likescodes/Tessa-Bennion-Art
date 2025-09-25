@@ -17,6 +17,9 @@
   --font-script: "Great Vibes", cursive;
 }
 
+/* Make any [hidden] element REALLY hidden (fixes menu lingering) */
+[hidden] { display: none !important; }
+
 /* ---------------- Reset ---------------- */
 *,
 *::before,
@@ -45,6 +48,8 @@ img, video {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.8s ease;
 }
 .intro-video {
   width: 100%;
@@ -75,7 +80,7 @@ img, video {
   border-radius: 0.4rem;
   font-size: 0.9rem;
 }
-.intro.hide { opacity: 0; pointer-events: none; transition: opacity 0.8s ease; }
+.intro.hide { opacity: 0; pointer-events: none; }
 
 /* ---------------- Header ---------------- */
 .site-header {
@@ -105,7 +110,7 @@ img, video {
   border-radius: 50%;
   object-fit: cover;
   margin-left: 0.75rem;
-   cursor: pointer;
+  cursor: pointer;
 }
 
 /* Dropdown */
@@ -127,7 +132,7 @@ img, video {
   border-top: 1px solid rgba(0,0,0,0.05);
 }
 .menu-link:hover,
-.menu-link:focus {
+.menu-link:focus-visible {
   background: rgba(0,0,0,0.05);
 }
 .menu-overlay {
@@ -156,9 +161,11 @@ img, video {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   padding-bottom: 0.5rem;
+  -webkit-overflow-scrolling: touch;
 }
 .rows::-webkit-scrollbar { display: none; }
 
+/* Cards */
 .card {
   flex: 0 0 auto;
   width: min(80vw, 320px);
@@ -171,6 +178,15 @@ img, video {
   border-radius: 0.5rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
+
+/* make video cards consistent */
+.card video {
+  height: auto;
+  aspect-ratio: 16 / 9;   /* adjust if you prefer 4/5 for videos too */
+  object-fit: cover;
+  border: 0;
+}
+
 .card figcaption {
   font-size: 0.85rem;
   color: var(--muted);
@@ -212,6 +228,7 @@ img, video {
   justify-content: space-around;
   padding: 0.5rem 0;
   border-top: 1px solid rgba(0,0,0,0.08);
+  backdrop-filter: blur(6px);
 }
 .bottom-dock a {
   font-size: 0.9rem;
@@ -257,3 +274,9 @@ img, video {
 /* ---------------- Utility ---------------- */
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
+
+/* Focus outlines for accessibility */
+:focus-visible {
+  outline: 2px solid rgba(0,0,0,0.35);
+  outline-offset: 3px;
+}
