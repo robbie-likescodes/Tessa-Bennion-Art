@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Academic Artist Portfolio</title>
+  <link rel="preload" href="styles.css" as="style">
+  <link rel="stylesheet" href="styles.css">
+  <meta name="color-scheme" content="light only">
+</head>
+<body>
+
+  <!-- Top Nav (brush-underline) -->
+  <header class="site-header">
+    <nav class="nav">
+      <a href="#home" class="active">Home</a>
+      <a href="#portraits">Portraits</a>
+      <a href="#still-life">Still Life</a>
+      <a href="#plein-air">Plein Air</a>
+      <a href="#life-drawing">Life Drawing</a>
+      <a href="#underdrawings">Underdrawings</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Subtle paper texture overlay (optional) -->
+  <div class="texture" aria-hidden="true"></div>
+
+  <main>
+
+    <!-- HERO: stacked canvases with scroll cross-fade/parallax -->
+    <section id="home" class="stack" aria-label="Featured Works">
+      <figure class="panel"><img class="par" src="uploads/sample/sample-hero-1.jpg" alt="Featured work 1"></figure>
+      <figure class="panel"><img class="par" src="uploads/sample/sample-hero-2.jpg" alt="Featured work 2"></figure>
+      <figure class="panel"><img class="par" src="uploads/sample/sample-hero-3.jpg" alt="Featured work 3"></figure>
+      <div class="stack-caption ktext">
+        <h1>Artist Name</h1>
+        <p>Oil, charcoal, and academic studies.</p>
+      </div>
+    </section>
+
+    <!-- CATEGORY: Portraits -->
+    <section id="portraits" class="section" data-io>
+      <h2 class="ktext">Portraits</h2>
+      <div class="carousel" aria-label="Portraits carousel">
+        <div class="track" id="track-portraits"></div>
+      </div>
+      <div class="grid" id="grid-portraits"></div>
+    </section>
+
+    <!-- CATEGORY: Still Life -->
+    <section id="still-life" class="section" data-io>
+      <h2 class="ktext">Still Life</h2>
+      <div class="carousel" aria-label="Still Life carousel">
+        <div class="track" id="track-still-life"></div>
+      </div>
+      <div class="grid" id="grid-still-life"></div>
+    </section>
+
+    <!-- CATEGORY: Plein Air -->
+    <section id="plein-air" class="section" data-io>
+      <h2 class="ktext">Plein Air</h2>
+      <div class="film">
+        <div class="rail" id="rail-plein-air"></div>
+      </div>
+      <div class="grid" id="grid-plein-air"></div>
+    </section>
+
+    <!-- CATEGORY: Life Drawing -->
+    <section id="life-drawing" class="section" data-io>
+      <h2 class="ktext">Life Drawing</h2>
+      <div class="carousel" aria-label="Life Drawing carousel">
+        <div class="track" id="track-life-drawing"></div>
+      </div>
+      <div class="grid" id="grid-life-drawing"></div>
+    </section>
+
+    <!-- CATEGORY: Underdrawings / Process -->
+    <section id="underdrawings" class="section" data-io>
+      <h2 class="ktext">Underdrawings & Process</h2>
+      <div class="scrub-wrap" id="scrub-wrap"></div>
+      <div class="grid" id="grid-underdrawings"></div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="section" data-io>
+      <h2 class="ktext">Contact</h2>
+      <p>For inquiries, email <a href="mailto:studio@example.com">studio@example.com</a>.</p>
+    </section>
+
+  </main>
+
+  <!-- Bottom “dock” for thumb-reachable nav -->
+  <nav class="bottom-dock" aria-label="Quick Sections">
+    <a href="#home">Home</a>
+    <a href="#portraits">Portraits</a>
+    <a href="#still-life">Still Life</a>
+    <a href="#plein-air">Plein Air</a>
+    <a href="#life-drawing">Life</a>
+    <a href="#underdrawings">Process</a>
+  </nav>
+
+  <!-- Lightbox modal -->
+  <div id="lightbox" class="lightbox" aria-modal="true" role="dialog" hidden>
+    <button class="lb-close" aria-label="Close">×</button>
+    <img id="lb-img" alt="">
+    <div id="lb-cap" class="lb-cap"></div>
+    <button class="lb-prev" aria-label="Previous">‹</button>
+    <button class="lb-next" aria-label="Next">›</button>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
