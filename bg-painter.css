@@ -1,0 +1,58 @@
+/* --- Academic Painter — isolated styles (ap-*) --- */
+:root {
+  --ap-paper: #efe5d6;
+  --ap-ink:   #3b342d;
+}
+
+#ap-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none; /* toggled by JS when painting */
+}
+
+.ap-toast{
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%) translateY(30px);
+  z-index: 9999;
+  background: rgba(30,24,20,0.85);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+.ap-toast.ap-show{
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ap-blob{
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 9998;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: transform .25s ease, opacity .25s ease;
+  touch-action: none;
+}
+.ap-blob:hover{ opacity: 1; }
+.ap-blob:active{ transform: scale(0.98); }
+
+.ap-holding-hint{
+  outline: 1px dashed rgba(60,50,45,0.22);
+  outline-offset: -2px;
+}
+
+body.ap-painting-active{
+  touch-action: none; /* prevent scroll while painting */
+}
