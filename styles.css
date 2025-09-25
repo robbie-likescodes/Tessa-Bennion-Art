@@ -31,12 +31,13 @@ html, body {
   font-family: var(--font-serif);
   background: var(--bg);
   color: var(--fg);
+  overflow-x: hidden; /* never allow sideways pan */
 }
 
 img, video {
   max-width: 100%;
-  display: block;
   height: auto;
+  display: block;
 }
 
 /* ---------------- Intro (two-stage fade) ---------------- */
@@ -99,7 +100,7 @@ img, video {
   top: 0;
   z-index: 900;
   display: grid;
-  grid-template-columns: 1fr auto auto; /* menu wide, palette (JS), profile */
+  grid-template-columns: 1fr auto auto; /* menu wide, palette (injected), profile */
   align-items: center;
   padding: .5rem var(--pad);
   background: rgba(250,249,247,.9);
@@ -107,7 +108,6 @@ img, video {
   border-bottom: 1px solid rgba(0,0,0,.08);
 }
 
-/* Support either id or class for the button */
 #menuTrigger,
 .menu-trigger{
   width: 100%;
@@ -128,6 +128,9 @@ img, video {
   margin-left: .75rem;
   cursor: pointer; /* tappable → About */
 }
+
+/* Optional mount where the painter palette can dock */
+#ap-palette-mount { display: inline-flex; margin-left: .5rem; }
 
 /* Dropdown */
 #menuDropdown,
@@ -166,7 +169,7 @@ img, video {
 .section{
   padding: 2rem var(--pad);
   max-width: var(--maxw);
-  margin: 0 auto;
+  margin: 0 auto; /* center the main feed */
 }
 .section-title{
   font-family: var(--font-serif);
@@ -183,6 +186,8 @@ img, video {
 }
 .stack-row{
   width: 100%;
+  display: grid;
+  place-items: center;      /* center each stack */
 }
 
 /* If a mount still has the old 'rows' class, force vertical behavior */
@@ -226,55 +231,9 @@ img, video {
   object-fit: cover;
 }
 
-/* Prevent horizontal scroll anywhere */
-html, body { overflow-x: hidden; }
-
-/* Main layout remains centered */
-.section { max-width: var(--maxw); margin: 0 auto; }
-
-/* Vertical list of collections (center each card) */
-.stacks{
-  display: grid;
-  grid-auto-flow: row;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-.stack-row{ width: 100%; display: grid; place-items: center; }
-
-/* If any mount still has 'rows', force vertical */
-.rows.stacks{
-  overflow: visible !important;
-  scroll-snap-type: none !important;
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 1rem !important;
-}
-
-/* Flip card: fill line, centered; consume pointer gestures horizontally */
-.flipstack{
-  width: min(92vw, 560px);
-  aspect-ratio: 4 / 5;
-  margin: 0 auto;
-  border-radius: 16px;
-  position: relative;
-  overflow: hidden;
-  perspective: 900px;
-  /* Critical: let JS handle horizontal gestures; prevents page from side-scrolling */
-  touch-action: none;
-}
-
-/* Videos row (Exhibitions) stays horizontally scrollable */
-#rows-exhibitions.rows { overflow-x: auto; }
-
-/* Palette mount spacing so the injected button sits nicely */
-#ap-palette-mount { display: inline-flex; margin-left: .5rem; }
-
-/* (Keep the rest of your existing CSS as-is) */
-
-
 /* Keep video cards consistent */
 .card video{
-  aspect-ratio: 16/9; /* change to 4/5 if you prefer portrait video look */
+  aspect-ratio: 16/9; /* adjust if you prefer 4/5 portrait */
   border: 0;
 }
 
@@ -286,16 +245,14 @@ html, body { overflow-x: hidden; }
 
 /* ---------------- Flip Stack (iMessage vibe) ---------------- */
 .flipstack{
-  position: relative;
-  flex: 0 0 auto;
-  width: min(80vw, 320px);
-  max-width: 560px;       /* nicer on larger phones */
-  margin: 0 auto;
+  width: min(92vw, 560px);
   aspect-ratio: 4 / 5;
+  margin: 0 auto;
   border-radius: 16px;
+  position: relative;
   overflow: hidden;
-  scroll-snap-align: start;
   perspective: 900px;
+  touch-action: none; /* JS handles horizontal gestures; prevents page tug */
 }
 .flipstack__item{
   position: absolute;
@@ -411,3 +368,4 @@ html, body { overflow-x: hidden; }
   outline: 2px solid rgba(0,0,0,.35);
   outline-offset: 3px;
 }
+
