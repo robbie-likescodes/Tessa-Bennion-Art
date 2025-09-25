@@ -174,7 +174,16 @@ img, video {
   margin: 0 0 .75rem;
 }
 
-/* ---------------- Horizontal rows ---------------- */
+/* ---------------- Vertical stacks (A, B, C…) ---------------- */
+.stacks{
+  display: grid;
+  gap: 1rem;
+}
+.stack-row{
+  /* one stack (or a small row for videos) lives here */
+}
+
+/* ---------------- Horizontal rows (used inside some stacks, e.g. videos) ---------------- */
 .rows{
   display: flex;
   gap: 1rem;
