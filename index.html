@@ -4,11 +4,35 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Academic Artist Portfolio</title>
+
+  <!-- Your existing stylesheet -->
   <link rel="preload" href="styles.css" as="style">
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Painter stylesheet -->
   <meta name="color-scheme" content="light only">
+  <link rel="stylesheet" href="bg-painter.css">
 </head>
 <body>
+
+  <!-- Top Nav (brush-underline) -->
+  <header class="site-header">
+    <nav class="nav">
+      <a href="#home" class="active">Home</a>
+      <a href="#portraits">Portraits</a>
+      <a href="#still-life">Still Life</a>
+      <a href="#plein-air">Plein Air</a>
+      <a href="#life-drawing">Life Drawing</a>
+      <a href="#underdrawings">Underdrawings</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <!-- ... rest of your page content ... -->
+
+  <!-- Painter script: load last so it can inject itself -->
+  <script src="bg-painter.js" defer></script>
+</body>
 
   <!-- Top Nav (brush-underline) -->
   <header class="site-header">
