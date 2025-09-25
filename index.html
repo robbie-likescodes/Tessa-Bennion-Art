@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Tessa Bennion Art</title>
-  <meta name="description" content="The portfolio of Tessa Bennion — life, portrait, still life, exhibitions, and sketches." />
+  <meta name="description" content="The portfolio of Tessa Bennion — life, portrait, still life, exhibitions, sketches, and artist statement." />
   <meta name="color-scheme" content="light only" />
 
   <!-- Fonts: cursive for brand, serif for body -->
@@ -21,12 +21,10 @@
 <body>
 
   <!-- ===================== Intro / Landing Video ===================== -->
-  <!-- Hybrid fallback: MOV first (you have these today), then MP4 for future -->
+  <!-- Hybrid fallback: MOV first (exists now), MP4 for future -->
   <div id="intro" class="intro" aria-label="Intro video">
     <video id="introVideo" class="intro-video" autoplay muted playsinline preload="auto">
-      <!-- Current source you have -->
       <source src="uploads/VidA1.MOV" type="video/quicktime" />
-      <!-- Future-friendly source (optional to add later) -->
       <source src="uploads/VidA1.mp4" type="video/mp4" />
     </video>
     <div class="intro-overlay" aria-hidden="true">
@@ -35,17 +33,27 @@
     <button id="skipIntro" class="skip-intro" aria-label="Skip intro">Skip</button>
   </div>
 
-  <!-- ===================== Site Header / Centered Nav ===================== -->
+  <!-- ===================== Site Header / Centered Menu ===================== -->
   <header class="site-header" role="banner">
-    <nav class="nav" role="navigation" aria-label="Primary">
-      <a href="#life" class="nav-link">Life</a>
-      <a href="#portrait" class="nav-link">Portrait</a>
-      <a href="#still" class="nav-link">Still&nbsp;Life</a>
-      <a href="#exhibitions" class="nav-link">Exhibitions</a>
-      <a href="#sketches" class="nav-link">Sketches</a>
-    </nav>
-    <!-- Profile A1 (top-right) -->
+    <!-- Centered Menu trigger -->
+    <button class="menu-trigger" id="menuTrigger" aria-expanded="false" aria-controls="menuDropdown">
+      Menu
+    </button>
+
+    <!-- Profile (top-right) -->
     <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
+
+    <!-- Dropdown Menu -->
+    <div class="menu-dropdown" id="menuDropdown" hidden>
+      <!-- “Art” points to the first art section (Life).
+           If you later wrap all art in <section id="art">, just change href to #art -->
+      <a href="#life" class="menu-link">Art</a>
+      <a href="#about" class="menu-link">About Me</a>
+      <a href="#contact" class="menu-link">Contact</a>
+    </div>
+
+    <!-- Click-off overlay for closing dropdown -->
+    <div class="menu-overlay" id="menuOverlay" hidden></div>
   </header>
 
   <!-- ===================== Main Content ===================== -->
@@ -80,6 +88,27 @@
     <section id="sketches" class="section" data-io aria-labelledby="sketches-title">
       <h2 id="sketches-title" class="section-title">Sketches</h2>
       <div class="rows" id="rows-sketches"></div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="section" aria-labelledby="about-title">
+      <h2 id="about-title" class="section-title">About Me</h2>
+      <figure class="about-hero">
+        <img src="uploads/ProfileA1.JPG" alt="Portrait of Tessa Bennion" />
+      </figure>
+      <div class="about-copy">
+        <p><strong>Tessa Bennion</strong> is an academic painter working primarily in oil, charcoal, and graphite. Her practice balances direct observation with long-form studio work, building surfaces slowly—glaze over glaze—until form feels inevitable.</p>
+        <p>She draws inspiration from classical ateliers, museum study, and the rhythms of everyday life. Portraits, still life arrangements, and plein air studies share a common thread: clear value structure, restrained color, and a quiet attention to edges.</p>
+        <p>When not at the easel, Tessa teaches foundational drawing and keeps a relentless sketch habit. This site is a living catalog of finished works, process notes, and the drawings that knit it all together.</p>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="section" aria-labelledby="contact-title">
+      <h2 id="contact-title" class="section-title">Contact</h2>
+      <p>For commissions, exhibitions, or studio visits, email
+        <a href="mailto:studio@example.com">studio@example.com</a>.
+      </p>
     </section>
 
   </main>
