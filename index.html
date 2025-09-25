@@ -32,13 +32,7 @@
     </div>
     <button id="skipIntro" class="skip-intro" aria-label="Skip intro">Skip</button>
   </div>
-<header class="site-header" role="banner">
-    <button class="menu-trigger" id="menuTrigger" aria-expanded="false" aria-controls="menuDropdown">Menu</button>
 
-    <!-- ⬇︎ NEW: palette mount (bg-painter.js will dock the palette button here if present) -->
-    <span id="ap-palette-mount" aria-hidden="true"></span>
-
-    <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
   <!-- ===================== Header (wide Menu + palette + profile) ===================== -->
   <header class="site-header" role="banner">
     <!-- Wide centered Menu trigger (palette and profile sit to its right via CSS grid) -->
@@ -46,7 +40,10 @@
       Menu
     </button>
 
-    <!-- Profile (top-right). Palette button is injected by bg-painter.js into this header. -->
+    <!-- Optional palette mount (your bg-painter can choose to dock here) -->
+    <span id="ap-palette-mount" aria-hidden="true"></span>
+
+    <!-- Profile (tap → About) -->
     <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
 
     <!-- Dropdown Menu -->
