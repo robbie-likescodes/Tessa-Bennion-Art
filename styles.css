@@ -105,6 +105,7 @@ img, video {
   border-radius: 50%;
   object-fit: cover;
   margin-left: 0.75rem;
+   cursor: pointer;
 }
 
 /* Dropdown */
