@@ -1,16 +1,16 @@
 /* =========================================================
-   Academic Painter — bg-painter.js
-   - Static palette activator on page margin (sparkle lure)
-   - Unlock by palette tap/double-click/long-press, or top-margin long-press
-   - Background painting w/ earthy palette, pressure/speed responsive dabs
-   - Never hijacks scroll when gesture starts on content (except stylus)
-   - DPR-aware, desynchronized 2D for perf; auto-relock after inactivity
+   Academic Painter — bg-painter.js (header palette, phone-first painting)
+   - Palette injected into .site-header (beside profile)
+   - Single-tap unlock (no long-press needed)
+   - Paint behind content; never hijack scroll if gesture starts on content
+   - While painting: temporarily disable page scroll (touchAction:none)
+   - DPR-aware; pressure/speed responsive; earthy color drift
+   - Auto-relock after inactivity; ESC to relock
 ========================================================= */
 
 (() => {
   // ---------------- Config ----------------
-  const HOLD_TO_UNLOCK_MS = 700;      // long-press in top margin
-  const HOLD_ON_PALETTE_MS = 600;     // long-press on palette
+  const HOLD_TO_UNLOCK_MS = 700;      // long-press in top margin (Easter egg; optional)
   const INACTIVITY_MS     = 6000;     // auto-relock after no input
   const TOP_UNLOCK_BOUNDS = 80;       // top 80px region
   const MAX_BRUSH         = 72;       // max brush radius px
@@ -32,7 +32,7 @@
 
   // Do NOT start painting if a gesture begins on these (unless stylus/pen)
   const AP_DISALLOW_SELECTOR =
-    'img, figure, .card, .row, .grid, a, .nav, header, .bottom-dock, .lb, video, .site-header, button, input, textarea, select';
+    'img, figure, .card, .row, .grid, a, .nav, header, .site-header, .bottom-dock, .lb, video, button, .menu-dropdown, .menu-link, .menu-trigger, input, textarea, select';
 
   // ---------------- State ----------------
   const state = {
@@ -125,7 +125,8 @@
 
   // ---------------- UI Injection ----------------
   function injectUI() {
-    // 1) Margin palette button (static position; right by default)
+    // Palette button goes inside header (column near profile)
+    const header = document.querySelector('.site-header') || document.body;
     const btn = document.createElement('button');
     btn.className = 'ap-palette';
     btn.type = 'button';
@@ -148,10 +149,10 @@
       </svg>
       <span class="ap-sparkle"></span>
     `;
-    document.body.appendChild(btn);
+    header.appendChild(btn);
     els.palette = btn;
 
-    // 2) Toast
+    // Toast
     const toast = document.createElement('div');
     toast.id = 'ap-toast';
     toast.setAttribute('role', 'status');
@@ -172,7 +173,7 @@
   function relock() {
     state.unlocked = false;
     endPaint();
-    // keep toast quiet on relock for subtlety
+    // subtle: no toast on relock
   }
 
   // ---------------- Painting Engine ----------------
@@ -182,14 +183,18 @@
     state.lastPt = getPoint(e);
     state.lastT = performance.now();
     state.lastSpeed = 0.3;
+    // stop page from scrolling during this gesture; restored on endPaint()
+    document.body.style.touchAction = 'none';
     kickInactivity();
     // seed a tiny dab
     dot(state.lastPt.x, state.lastPt.y, 1);
+    e.preventDefault();
   }
 
   function endPaint() {
     state.painting = false;
     state.lastPt = null;
+    document.body.style.touchAction = '';
   }
 
   function getPoint(e) {
@@ -208,7 +213,6 @@
       return; // allow natural scroll/interaction
     }
 
-    e.preventDefault(); // intentional: we are painting now
     beginPaintFrom(e);
   }
 
@@ -287,19 +291,6 @@
   function bindPalette() {
     // Single tap/click unlock
     els.palette.addEventListener('click', () => unlock(), { passive: true });
-
-    // Double-click unlock (desktop)
-    els.palette.addEventListener('dblclick', () => unlock());
-
-    // Long-press unlock (touch)
-    let pressTimer = null;
-    els.palette.addEventListener('pointerdown', () => {
-      clearTimeout(pressTimer);
-      pressTimer = setTimeout(() => unlock(), HOLD_ON_PALETTE_MS);
-    }, { passive: true });
-    ['pointerup','pointercancel','pointerleave'].forEach(ev =>
-      els.palette.addEventListener(ev, () => clearTimeout(pressTimer), { passive: true })
-    );
   }
 
   // ESC to relock
@@ -316,7 +307,7 @@
     document.addEventListener('pointerup', onPointerUp, { passive: true });
     document.addEventListener('pointercancel', onPointerUp, { passive: true });
 
-    // Unlock gestures
+    // Optional top-margin Easter-egg unlock
     document.addEventListener('pointerdown', onTopHoldStart, { passive: true });
     document.addEventListener('pointerup', onTopHoldEnd, { passive: true });
     document.addEventListener('pointercancel', onTopHoldEnd, { passive: true });
@@ -326,9 +317,6 @@
 
     // Safety
     window.addEventListener('blur', () => endPaint());
-
-    // Note: we no longer toggle canvas pointer-events with classes;
-    // we simply decide to handle or ignore pointerdown based on target/unlocked state.
   }
 
   if (document.readyState === 'loading') {
