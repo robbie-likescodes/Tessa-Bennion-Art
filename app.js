@@ -1,5 +1,5 @@
 /* =========================================================
-   Tessa Bennion — app.js
+   Tessa Bennion — app.js (updated)
    - Landing video fade & skip
    - Centered nav with smooth in-page navigation
    - Horizontal, snap-scrolling rows per section (phone-first)
@@ -9,41 +9,43 @@
 ========================================================= */
 
 /* ---------------------- Your ordered media ---------------------- */
-/* Tip: Add more by pushing to these arrays (or add new row arrays). */
+/* NOTE: Filenames must match exactly (including case/typos). Add more by
+   pushing to these arrays, or add new row arrays to create new horizontal rails. */
 const DATA = {
   life: [
-    ["LifeA1.jpg", "LifeA2.jpg"],
-    ["LifeB1.jpg", "LifeB2.jpg", "LifeB3.jpg"],
-    ["LifeC1.jpg", "LifeC2.jpg"]
+    ["LifeA1.jpeg", "LifeA2.jpeg"],
+    ["LifeB1.jpeg", "LifeB2.jpeg", "LifeB3.jpeg"],
+    ["LifeC1.jpeg", "LifeC2.jpeg"]
   ],
   portrait: [
-    ["PortraitA1.jpg"],
-    ["PortraitB1.jpg", "PortraitB2.jpg", "PortraitB3.jpg"],
-    ["PortraitC1.jpg"],
-    ["PortraitD1.jpg"],
-    ["PortraitE1.jpg"],
-    ["PortraitF1.jpg"],
-    ["PortraitG1.jpg"],
-    ["PortraitH1.jpg"]
+    ["PortraitA1.JPEG"],
+    // keep current filenames exactly as uploaded:
+    ["PortaitB1.jpeg", "PortrainB2.jpeg", "PortraitB3.PNG"],
+    ["PortraitC1.jpeg"],
+    ["PortraitD1.jpeg"],
+    ["PortraitE1.jpeg"],
+    ["PortraitF1.jpeg"],
+    ["PortraitG1.jpeg"],
+    ["PortraitH1.jpeg"]
   ],
   still: [
-    ["StillA1.jpg", "StillA2.jpg", "StillA3.jpg", "StillA4.jpg"],
-    ["StillB1.jpg"]
+    ["StillA1.jpeg", "StillA2.JPG", "StillA3.JPEG", "StillA4.jpeg"],
+    ["StillB1.jpeg"]
   ],
   exhibitions: [
-    // Add rows like: ["ShowPoster1.jpg","ShowPoster2.jpg"]
+    // Add rows later, e.g. ["ShowPoster1.jpg","ShowPoster2.jpg"]
   ],
   sketches: [
-    ["SketchA1.jpg"],
-    ["SketchB1.jpg"],
-    ["SketchC1.jpg"],
-    ["SketchD1.jpg"],
-    ["SketchE1.jpg"]
+    ["SketchA1.jpeg"],
+    ["SketchB1.jpeg"],
+    ["SketchC1.jpeg"],
+    ["SketchD1.jpeg"],
+    ["SketchE1.jpeg"]
   ]
 };
 
-/* If you nest by folder later (e.g. uploads/life/LifeA1.jpg),
-   either update BASE or put full paths in the arrays above. */
+/* If you reorganize files into subfolders later (e.g. uploads/life/LifeA1.jpeg),
+   either update BASE or use full paths inside DATA arrays. */
 const BASE = "uploads/";
 
 /* --------------------------- Helpers --------------------------- */
@@ -51,7 +53,7 @@ const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const on = (el, ev, fn, opt) => el && el.addEventListener(ev, fn, opt);
 
-/* Turn "PortraitB1.jpg" → "Portrait B1" */
+/* Turn "PortraitB1.jpeg" → "Portrait B1" (used for alt/caption if needed) */
 function humanizeFilename(file) {
   const name = file.split("/").pop().replace(/\.[a-z0-9]+$/i, "");
   return name.replace(/[-_]+/g, " ").replace(/([a-z])([0-9])/gi, "$1 $2");
@@ -75,7 +77,7 @@ function makeCard(src, caption = "") {
   a.appendChild(img);
   fig.appendChild(a);
 
-  // Optional caption (comment out if you prefer no under-text)
+  // If you want visible captions, uncomment below:
   // const fc = document.createElement("figcaption");
   // fc.textContent = caption || humanizeFilename(src);
   // fig.appendChild(fc);
@@ -102,7 +104,7 @@ function renderRows(mountId, rows) {
   });
   mount.appendChild(frag);
 
-  // Enable wheel-to-horizontal for convenience on desktop trackpads/mice
+  // Desktop convenience: vertical wheel scroll nudges row horizontally
   $$(".row", mount).forEach(row => {
     on(row, "wheel", (e) => {
       if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
@@ -157,7 +159,6 @@ function smoothNav() {
   );
 
   // Active highlighting as sections enter view
-  const map = new Map(allLinks.map(a => [a.getAttribute("href"), a]));
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (!entry.isIntersecting) return;
@@ -180,19 +181,21 @@ function introFlow() {
   const skip  = $("#skipIntro");
 
   const endIntro = () => {
+    if (intro.classList.contains("hide")) return;
     intro.classList.add("hide");
-    // Move focus to main for accessibility after fade
     setTimeout(() => $("#main")?.focus?.(), 300);
   };
 
-  // Autoplay end (best path)
+  // End when playback ends (preferred)
   on(vid, "ended", endIntro);
-  // Fallback timeout (~10s)
+
+  // Fallback timeout (~10s) so users aren’t stuck if MOV can’t play
   setTimeout(() => { if (!intro.classList.contains("hide")) endIntro(); }, 10000);
-  // Manual "Skip"
+
+  // Allow users to skip immediately
   on(skip, "click", endIntro);
 
-  // If autoplay is blocked (rare with muted), user scroll should hide intro
+  // If autoplay is blocked or video fails, a small scroll also dismisses
   on(window, "scroll", () => {
     if (!intro.classList.contains("hide") && window.scrollY > 40) endIntro();
   }, { passive: true });
