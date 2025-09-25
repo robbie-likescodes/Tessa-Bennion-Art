@@ -39,31 +39,41 @@ function isVideo(name){ return ext(name) === "mp4"; }
 function isImage(name){ return /jpe?g|png|webp|gif|bmp|tiff?/i.test(ext(name)); }
 function baseName(name){ return name.replace(/\.[a-z0-9]+$/i, ""); }
 
-/* Series key: PortraitB1 → "PortraitB" (letters + ONE capital + digits) */
+/* Series & collection keys
+   - PortraitB1 → series "PortraitB", collection "PortraitB"
+   - LifeC2     → series "LifeC",    collection "LifeC"
+*/
 function seriesKey(name){
   const b = baseName(name);
   const m = b.match(/^([A-Za-z]+[A-Z])[0-9]+$/);
   return m ? m[1] : b;
 }
+function collectionKey(name){
+  const b = baseName(name);
+  const m = b.match(/^([A-Za-z]+[A-Z])/);   // e.g., LifeA / PortraitC
+  return m ? m[1] : seriesKey(name);
+}
 
-function groupIntoRows(fileList){
+/* Group files by collection letter (A/B/C…), sort A→Z, then numerically */
+function groupIntoCollections(fileList){
   const map = new Map();
   for(const f of fileList){
-    const key = seriesKey(f);
+    const key = collectionKey(f);
     if(!map.has(key)) map.set(key, []);
     map.get(key).push(f);
   }
-  const rows = [];
-  map.forEach(arr => {
-    arr.sort((a,b) => {
-      const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
-      const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
-      return na - nb;
-    });
-    rows.push(arr);
+  map.forEach(arr => arr.sort((a,b) => {
+    const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
+    const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
+    return na - nb; // 1,2,3…
+  }));
+  const entries = [...map.entries()];
+  entries.sort((a,b) => {
+    const la = a[0].slice(-1), lb = b[0].slice(-1); // A/B/C
+    if (la !== lb) return la.localeCompare(lb);
+    return a[0].localeCompare(b[0]);                // fallback by prefix
   });
-  rows.sort((ra, rb) => (ra[0] < rb[0] ? -1 : 1));
-  return rows;
+  return entries; // [ [key, [files…]], ... ]
 }
 
 /* ---------------------- Card factories ---------------------- */
@@ -102,13 +112,12 @@ function makeVideoCard(src) {
   return fig;
 }
 
-/* ---------- Flip Stack (A1 on top; A2/A3… revealed) ---------- */
+/* ---------- Flip Stack (shows X1 on top; X2/X3… revealed) ---------- */
 function makeFlipStackCard(files) {
-  // Ensure numeric order: A1, A2, A3...
   const ordered = [...files].sort((a,b)=>{
     const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
     const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
-    return na - nb;
+    return na - nb; // 1,2,3…
   });
 
   const wrap = document.createElement("div");
@@ -137,7 +146,6 @@ function makeFlipStackCard(files) {
       const rel = (i - head + ordered.length) % ordered.length;
       el.dataset.pos = rel===0 ? "0" : rel===1 ? "1" : rel===2 ? "2" : "rest";
       if (rel===0) {
-        // clicking the visible image opens lightbox
         el.onclick = () => openLightbox(BASE+ordered[head], humanizeFilename(ordered[head]));
       } else {
         el.onclick = null;
@@ -148,8 +156,7 @@ function makeFlipStackCard(files) {
   apply();
 
   // tap to advance
-  wrap.addEventListener("click", e=>{
-    // ignore if user tapped a link inside (we don't have links inside)
+  wrap.addEventListener("click", ()=>{
     head = (head + 1) % ordered.length;
     apply();
   });
@@ -184,13 +191,16 @@ function makeFlipStackCard(files) {
   return wrap;
 }
 
-/* -------------------------- Render --------------------------- */
+/* -------------------------- Render (VERTICAL stacks) --------------------------- */
 function renderGroupedRows(mountId, fileList) {
   const mount = document.getElementById(mountId);
   if (!mount) return;
 
-  const rows = groupIntoRows(fileList);
-  if (!rows.length) {
+  // Vertical list of collections
+  mount.classList.add("stacks");
+
+  const collections = groupIntoCollections(fileList);
+  if (!collections.length) {
     const empty = document.getElementById(mountId.replace("rows-", "") + "-empty");
     if (empty) empty.hidden = false;
     return;
@@ -198,38 +208,34 @@ function renderGroupedRows(mountId, fileList) {
 
   const frag = document.createDocumentFragment();
 
-  rows.forEach(list => {
-    const row = document.createElement("div");
-    row.className = "row";
+  collections.forEach(([key, files]) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "stack-row";
 
-    const allImgs = list.every(isImage);
-    const anyVid  = list.some(isVideo);
+    const allImgs = files.every(isImage);
+    const anyVid  = files.some(isVideo);
 
-    if (allImgs && list.length > 1) {
-      // iMessage-style stack: show A1 on top; A2/A3… inside
-      row.appendChild(makeFlipStackCard(list));
-    } else {
-      // default: render each file as its own card
-      list.forEach(file => {
-        if (isVideo(file)) row.appendChild(makeVideoCard(file));
-        else row.appendChild(makeImageCard(file));
+    if (allImgs && files.length >= 1) {
+      // iMessage-style stack: X1 on top; X2/X3… inside
+      wrapper.appendChild(makeFlipStackCard(files));
+    } else if (anyVid) {
+      // For video collections (e.g., exhibitions) → small horizontal row inside
+      const row = document.createElement("div");
+      row.className = "row"; // re-use your horizontal styling
+      files.forEach(f => {
+        if (isVideo(f)) row.appendChild(makeVideoCard(f));
+        else row.appendChild(makeImageCard(f));
       });
+      wrapper.appendChild(row);
+    } else {
+      // Fallback (single image)
+      wrapper.appendChild(makeImageCard(files[0]));
     }
 
-    frag.appendChild(row);
+    frag.appendChild(wrapper);
   });
 
   mount.appendChild(frag);
-
-  // Desktop convenience: vertical wheel scroll nudges row horizontally
-  $$(".row", mount).forEach(row => {
-    on(row, "wheel", (e) => {
-      if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
-        row.scrollLeft += e.deltaY;
-        e.preventDefault();
-      }
-    }, { passive: false });
-  });
 }
 
 /* --------------------------- Lightbox -------------------------- */
@@ -239,19 +245,17 @@ function wireLightbox() {
   LB.img = $("#lb-img");
   LB.cap = $("#lb-cap");
 
-  const bind = () => {
-    $$(".lb").forEach(a =>
-      on(a, "click", e => {
-        e.preventDefault();
-        const img = $("img", a);
-        LB.img.src = a.href;
-        LB.img.alt = img?.alt || "";
-        LB.cap.textContent = img?.alt || "";
-        LB.el.hidden = false;
-      })
-    );
-  };
-  bind();
+  // Bind click handlers for all .lb links present at load
+  $$(".lb").forEach(a =>
+    on(a, "click", e => {
+      e.preventDefault();
+      const img = $("img", a);
+      LB.img.src = a.href;
+      LB.img.alt = img?.alt || "";
+      LB.cap.textContent = img?.alt || "";
+      LB.el.hidden = false;
+    })
+  );
 
   on($(".lb-close"), "click", () => (LB.el.hidden = true));
   on(LB.el, "click", (e) => { if (e.target === LB.el) LB.el.hidden = true; });
@@ -333,16 +337,15 @@ function introFlow() {
 
   const SHOW_MS = 6000;    // show time after playback begins
   const STAGE1  = 700;     // video fade to black duration (CSS)
-  let started = false, timerStage = null;
+  let started = false;
 
   const startFade = () => {
-    intro.classList.add("fade-video");                   // Stage 1
-    timerStage = setTimeout(() => {
-      intro.classList.add("fade-overlay");               // Stage 2
-      // remove from DOM after overlay transition
+    intro.classList.add("fade-video");        // Stage 1: fade the video to black
+    setTimeout(() => {
+      intro.classList.add("fade-overlay");    // Stage 2: fade overlay away
       intro.addEventListener("transitionend", () => {
         try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {}
-        intro.remove();
+        intro.remove();                       // remove from DOM (no lingering veil)
       }, { once:true });
     }, STAGE1 + 50);
   };
@@ -353,7 +356,6 @@ function introFlow() {
     setTimeout(startFade, SHOW_MS);
   };
 
-  // ensure playback starts
   const tryPlay = () => vid.play().catch(()=>{});
   if (vid.readyState >= 2) tryPlay();
   else vid.addEventListener("canplay", tryPlay, { once:true });
