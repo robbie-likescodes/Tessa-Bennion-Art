@@ -5,6 +5,12 @@
    - Toast notifications
 ========================================================= */
 
+/* When actively painting, suppress page panning/zooming so brush feels direct */
+body.ap-painting-active {
+  touch-action: none;       /* mobile: don't pan/zoom while painting */
+  overscroll-behavior: none;
+}
+
 /* ---- Background canvas (always behind, inert to clicks) ---- */
 #ap-canvas {
   position: fixed;
