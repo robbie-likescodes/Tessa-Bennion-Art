@@ -177,10 +177,21 @@ img, video {
 /* ---------------- Vertical stacks (A, B, C…) ---------------- */
 .stacks{
   display: grid;
+  grid-auto-flow: row;      /* force vertical order */
+  grid-template-columns: 1fr;
   gap: 1rem;
 }
 .stack-row{
-  /* one stack (or a small row for videos) lives here */
+  width: 100%;
+}
+
+/* If a mount still has the old 'rows' class, force vertical behavior */
+.rows.stacks{
+  overflow: visible !important;
+  scroll-snap-type: none !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
 }
 
 /* ---------------- Horizontal rows (used inside some stacks, e.g. videos) ---------------- */
@@ -232,6 +243,8 @@ img, video {
   position: relative;
   flex: 0 0 auto;
   width: min(80vw, 320px);
+  max-width: 560px;       /* nicer on larger phones */
+  margin: 0 auto;
   aspect-ratio: 4 / 5;
   border-radius: 16px;
   overflow: hidden;
