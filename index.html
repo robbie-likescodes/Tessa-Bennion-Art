@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <!-- Prevent sideways zoom/pan on iOS (optional: improves stability; reduces pinch-zoom) -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Tessa Bennion Art</title>
   <meta name="description" content="The portfolio of Tessa Bennion — life, portrait, still life, exhibitions, sketches, and artist statement." />
@@ -29,7 +32,13 @@
     </div>
     <button id="skipIntro" class="skip-intro" aria-label="Skip intro">Skip</button>
   </div>
+<header class="site-header" role="banner">
+    <button class="menu-trigger" id="menuTrigger" aria-expanded="false" aria-controls="menuDropdown">Menu</button>
 
+    <!-- ⬇︎ NEW: palette mount (bg-painter.js will dock the palette button here if present) -->
+    <span id="ap-palette-mount" aria-hidden="true"></span>
+
+    <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
   <!-- ===================== Header (wide Menu + palette + profile) ===================== -->
   <header class="site-header" role="banner">
     <!-- Wide centered Menu trigger (palette and profile sit to its right via CSS grid) -->
