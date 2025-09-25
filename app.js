@@ -1,9 +1,5 @@
 /* =========================================================
-   Tessa Bennion — app.js
-   - intro 6s hold + hard remove
-   - menu autoclose
-   - profile→about
-   - grouped rows (images/videos)
+   Tessa Bennion — app.js (intro 6s hold → two-stage fade, menu autoclose, profile→about)
 ========================================================= */
 
 /* ------------ List your files (exact names) ------------ */
@@ -40,9 +36,10 @@ const on = (el, ev, fn, opt) => el && el.addEventListener(ev, fn, opt);
 
 function ext(name){ return (name.split(".").pop() || "").toLowerCase(); }
 function isVideo(name){ return ext(name) === "mp4"; }
+function isImage(name){ return /jpe?g|png|webp|gif|bmp|tiff?/i.test(ext(name)); }
 function baseName(name){ return name.replace(/\.[a-z0-9]+$/i, ""); }
 
-/* Series key: PortraitB1 → "PortraitB" */
+/* Series key: PortraitB1 → "PortraitB" (letters + ONE capital + digits) */
 function seriesKey(name){
   const b = baseName(name);
   const m = b.match(/^([A-Za-z]+[A-Z])[0-9]+$/);
@@ -105,6 +102,88 @@ function makeVideoCard(src) {
   return fig;
 }
 
+/* ---------- Flip Stack (A1 on top; A2/A3… revealed) ---------- */
+function makeFlipStackCard(files) {
+  // Ensure numeric order: A1, A2, A3...
+  const ordered = [...files].sort((a,b)=>{
+    const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
+    const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
+    return na - nb;
+  });
+
+  const wrap = document.createElement("div");
+  wrap.className = "flipstack";
+
+  const layers = ordered.map((f,i)=>{
+    const item = document.createElement("div");
+    item.className = "flipstack__item";
+    item.dataset.pos = i===0 ? "0" : i===1 ? "1" : i===2 ? "2" : "rest";
+    const img = document.createElement("img");
+    img.loading="lazy"; img.decoding="async";
+    img.src = BASE + f; img.alt = humanizeFilename(f);
+    item.appendChild(img);
+    wrap.appendChild(item);
+    return item;
+  });
+
+  const badge = document.createElement("div");
+  badge.className = "flipstack__badge";
+  badge.textContent = `1/${ordered.length}`;
+  wrap.appendChild(badge);
+
+  let head = 0;
+  const apply = ()=>{
+    layers.forEach((el,i)=>{
+      const rel = (i - head + ordered.length) % ordered.length;
+      el.dataset.pos = rel===0 ? "0" : rel===1 ? "1" : rel===2 ? "2" : "rest";
+      if (rel===0) {
+        // clicking the visible image opens lightbox
+        el.onclick = () => openLightbox(BASE+ordered[head], humanizeFilename(ordered[head]));
+      } else {
+        el.onclick = null;
+      }
+    });
+    badge.textContent = `${head+1}/${ordered.length}`;
+  };
+  apply();
+
+  // tap to advance
+  wrap.addEventListener("click", e=>{
+    // ignore if user tapped a link inside (we don't have links inside)
+    head = (head + 1) % ordered.length;
+    apply();
+  });
+
+  // horizontal swipe to flip (phone-friendly)
+  const drag = {down:false, x:0, y:0};
+  wrap.addEventListener("pointerdown", e=>{
+    drag.down = true; drag.x = e.clientX; drag.y = e.clientY;
+    wrap.setPointerCapture?.(e.pointerId);
+  });
+  wrap.addEventListener("pointermove", e=>{
+    if(!drag.down) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 14) {
+      e.preventDefault(); // stop page scroll while flipping
+      layers[head].style.transform = `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
+    }
+  }, {passive:false});
+  wrap.addEventListener("pointerup", e=>{
+    if(!drag.down) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    layers[head].style.transform = ""; // restore
+    drag.down = false;
+    wrap.releasePointerCapture?.(e.pointerId);
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+      head = (head + (dx < 0 ? 1 : ordered.length - 1)) % ordered.length;
+      apply();
+      e.preventDefault();
+    }
+  });
+
+  return wrap;
+}
+
 /* -------------------------- Render --------------------------- */
 function renderGroupedRows(mountId, fileList) {
   const mount = document.getElementById(mountId);
@@ -118,18 +197,31 @@ function renderGroupedRows(mountId, fileList) {
   }
 
   const frag = document.createDocumentFragment();
+
   rows.forEach(list => {
     const row = document.createElement("div");
     row.className = "row";
-    list.forEach(file => {
-      if (isVideo(file)) row.appendChild(makeVideoCard(file));
-      else row.appendChild(makeImageCard(file));
-    });
+
+    const allImgs = list.every(isImage);
+    const anyVid  = list.some(isVideo);
+
+    if (allImgs && list.length > 1) {
+      // iMessage-style stack: show A1 on top; A2/A3… inside
+      row.appendChild(makeFlipStackCard(list));
+    } else {
+      // default: render each file as its own card
+      list.forEach(file => {
+        if (isVideo(file)) row.appendChild(makeVideoCard(file));
+        else row.appendChild(makeImageCard(file));
+      });
+    }
+
     frag.appendChild(row);
   });
+
   mount.appendChild(frag);
 
-  // Desktop: vertical wheel scroll nudges row horizontally
+  // Desktop convenience: vertical wheel scroll nudges row horizontally
   $$(".row", mount).forEach(row => {
     on(row, "wheel", (e) => {
       if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
@@ -147,17 +239,19 @@ function wireLightbox() {
   LB.img = $("#lb-img");
   LB.cap = $("#lb-cap");
 
-  const links = $$(".lb");
-  links.forEach(a =>
-    on(a, "click", e => {
-      e.preventDefault();
-      const img = $("img", a);
-      LB.img.src = a.href;
-      LB.img.alt = img?.alt || "";
-      LB.cap.textContent = img?.alt || "";
-      LB.el.hidden = false;
-    })
-  );
+  const bind = () => {
+    $$(".lb").forEach(a =>
+      on(a, "click", e => {
+        e.preventDefault();
+        const img = $("img", a);
+        LB.img.src = a.href;
+        LB.img.alt = img?.alt || "";
+        LB.cap.textContent = img?.alt || "";
+        LB.el.hidden = false;
+      })
+    );
+  };
+  bind();
 
   on($(".lb-close"), "click", () => (LB.el.hidden = true));
   on(LB.el, "click", (e) => { if (e.target === LB.el) LB.el.hidden = true; });
@@ -167,7 +261,7 @@ function wireLightbox() {
 /* ---------------------- Smooth section nav --------------------- */
 function smoothNav() {
   const dockLinks   = $$(".bottom-dock a");
-  const menuLinks   = $$("#menuDropdown a");
+  const menuLinks   = $$(".menu-dropdown a");
   const allLinks    = [...dockLinks, ...menuLinks];
 
   allLinks.forEach(a =>
@@ -207,53 +301,66 @@ function menuControls(){
   const close = () => { btn.setAttribute('aria-expanded','false'); drop.hidden = true;  veil.hidden = true;  };
   const toggle = () => (btn.getAttribute('aria-expanded') === 'true' ? close() : open());
 
-  close(); // force closed on load
+  // Force closed on load
+  close();
 
-  btn.addEventListener('click', toggle);
+  btn.addEventListener('click', (e)=>{ e.stopPropagation(); toggle(); });
   veil.addEventListener('click', close);
 
+  // Close on outside clicks
+  document.addEventListener('click', (e)=>{
+    if (drop.hidden) return;
+    const inside = drop.contains(e.target) || btn.contains(e.target);
+    if (!inside) close();
+  });
+
+  // Auto-close on scroll/resize/hashchange
   window.addEventListener('scroll', close, { passive: true });
   window.addEventListener('resize', close);
   window.addEventListener('hashchange', close);
 
+  // Close when picking a link
   drop.querySelectorAll('a').forEach(a=> a.addEventListener('click', close));
 }
 
 /* ------------------------- Intro video ------------------------- */
+/* Show ~6s then two-stage fade: video→black, then overlay fades away */
 function introFlow() {
   const intro = $("#intro");
   const vid   = $("#introVideo");
   const skip  = $("#skipIntro");
-  const SHOW_MS = 6000;
-
   if (!intro || !vid) return;
 
-  let hideTimer = null;
-  let ended = false;
+  const SHOW_MS = 6000;    // show time after playback begins
+  const STAGE1  = 700;     // video fade to black duration (CSS)
+  let started = false, timerStage = null;
 
-  const hardHide = () => {
-    if (!intro || intro.classList.contains("hide")) return;
-    intro.classList.add("hide");
-    const onTransEnd = () => {
-      intro.removeEventListener("transitionend", onTransEnd);
-      try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {}
-      intro.remove();
-    };
-    intro.addEventListener("transitionend", onTransEnd);
+  const startFade = () => {
+    intro.classList.add("fade-video");                   // Stage 1
+    timerStage = setTimeout(() => {
+      intro.classList.add("fade-overlay");               // Stage 2
+      // remove from DOM after overlay transition
+      intro.addEventListener("transitionend", () => {
+        try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {}
+        intro.remove();
+      }, { once:true });
+    }, STAGE1 + 50);
   };
 
-  const scheduleHide = () => {
-    clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => { if (!ended) hardHide(); }, SHOW_MS);
+  const scheduleStartFade = () => {
+    if (started) return;
+    started = true;
+    setTimeout(startFade, SHOW_MS);
   };
 
-  on(vid, "playing", scheduleHide);
-  on(vid, "canplay", () => { if (vid.paused) vid.play().catch(()=>{}); });
-  on(vid, "loadeddata", () => { if (vid.paused) vid.play().catch(()=>{}); });
-  setTimeout(() => { if (!hideTimer) scheduleHide(); }, 1500);
+  // ensure playback starts
+  const tryPlay = () => vid.play().catch(()=>{});
+  if (vid.readyState >= 2) tryPlay();
+  else vid.addEventListener("canplay", tryPlay, { once:true });
 
-  on(vid, "ended", () => { ended = true; hardHide(); });
-  on(skip, "click", hardHide);
+  vid.addEventListener("playing", scheduleStartFade, { once:true });
+  vid.addEventListener("ended", startFade, { once:true });
+  skip?.addEventListener("click", startFade);
 }
 
 /* ---------------- Profile → About link ---------------- */
@@ -281,3 +388,11 @@ function boot() {
 }
 
 document.addEventListener("DOMContentLoaded", boot);
+
+/* ------------- Lightbox opener used by Flip Stack --------------- */
+function openLightbox(src, caption){
+  const lb = $("#lightbox"); if(!lb) return;
+  $("#lb-img").src = src;
+  $("#lb-cap").textContent = caption || "";
+  lb.hidden = false;
+}
