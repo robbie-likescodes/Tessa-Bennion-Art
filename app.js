@@ -1,257 +1,215 @@
 /* =========================================================
-   Academic Portfolio — app.js
-   - Pure static (GitHub Pages)
-   - Data-driven sections (no hard-coded counts)
-   - Gentle, performant interactions
+   Tessa Bennion — app.js
+   - Landing video fade & skip
+   - Centered nav with smooth in-page navigation
+   - Horizontal, snap-scrolling rows per section (phone-first)
+   - Minimal lightbox
+   - IntersectionObserver highlights active section in nav & dock
+   - Data-driven: add more files/rows without editing HTML
 ========================================================= */
 
-/* --------------- Data source --------------- */
-// Put your real JSON at: content/portfolio.json (optional).
-// We’ll try to fetch it; if missing, we fall back to SAMPLE_DATA.
-const DATA_URL = 'content/portfolio.json';
-
-const SAMPLE_DATA = [
-  // Minimal demo items (replace with your own)
-  { title:'Portrait Study', year:2024, medium:'Oil on linen', categories:['portraits'], image:'uploads/sample/portraits-1-thumb.jpg', full:'uploads/sample/portraits-1-full.jpg' },
-  { title:'Still Life w/ Copper', year:2023, medium:'Oil on panel', categories:['still-life'], image:'uploads/sample/still-1-thumb.jpg', full:'uploads/sample/still-1-full.jpg' },
-  { title:'Plein Air Trees', year:2022, medium:'Oil on panel', categories:['plein-air'], image:'uploads/sample/plein-1-thumb.jpg', full:'uploads/sample/plein-1-full.jpg' },
-  { title:'Figure Gesture', year:2024, medium:'Charcoal on paper', categories:['life-drawing'], image:'uploads/sample/life-1-thumb.jpg', full:'uploads/sample/life-1-full.jpg' },
-  // Process pair: add 'under'
-  { title:'Underdrawing Demo', year:2023, medium:'Oil', categories:['underdrawings'], image:'uploads/sample/final-thumb.jpg', full:'uploads/sample/final-full.jpg', under:'uploads/sample/under-full.jpg' },
-];
-
-/* --------------- Helpers --------------- */
-const $ = (s, r=document) => r.querySelector(s);
-const $$ = (s, r=document) => [...r.querySelectorAll(s)];
-const on = (el, ev, fn, opt)=> el && el.addEventListener(ev, fn, opt);
-
-const fitList = (list=[], target=10, pad=false) => {
-  const out = list.slice(0, target);
-  if (!pad) return out;
-  while (out.length < target) out.push({ placeholder:true });
-  return out;
+/* ---------------------- Your ordered media ---------------------- */
+/* Tip: Add more by pushing to these arrays (or add new row arrays). */
+const DATA = {
+  life: [
+    ["LifeA1.jpg", "LifeA2.jpg"],
+    ["LifeB1.jpg", "LifeB2.jpg", "LifeB3.jpg"],
+    ["LifeC1.jpg", "LifeC2.jpg"]
+  ],
+  portrait: [
+    ["PortraitA1.jpg"],
+    ["PortraitB1.jpg", "PortraitB2.jpg", "PortraitB3.jpg"],
+    ["PortraitC1.jpg"],
+    ["PortraitD1.jpg"],
+    ["PortraitE1.jpg"],
+    ["PortraitF1.jpg"],
+    ["PortraitG1.jpg"],
+    ["PortraitH1.jpg"]
+  ],
+  still: [
+    ["StillA1.jpg", "StillA2.jpg", "StillA3.jpg", "StillA4.jpg"],
+    ["StillB1.jpg"]
+  ],
+  exhibitions: [
+    // Add rows like: ["ShowPoster1.jpg","ShowPoster2.jpg"]
+  ],
+  sketches: [
+    ["SketchA1.jpg"],
+    ["SketchB1.jpg"],
+    ["SketchC1.jpg"],
+    ["SketchD1.jpg"],
+    ["SketchE1.jpg"]
+  ]
 };
 
-const byCategory = (items=[]) => {
-  const map = { 'portraits':[], 'still-life':[], 'plein-air':[], 'life-drawing':[], 'underdrawings':[] };
-  items.forEach(x => (x.categories||[]).forEach(c => { if(map[c]) map[c].push(x); }));
-  return map;
-};
+/* If you nest by folder later (e.g. uploads/life/LifeA1.jpg),
+   either update BASE or put full paths in the arrays above. */
+const BASE = "uploads/";
 
-const imgEl = (item) => {
-  const fig = document.createElement('figure');
-  fig.className = 'card';
-  if (item.placeholder) {
-    const ph = document.createElement('div');
-    ph.className = 'placeholder';
-    ph.style.aspectRatio = '4/5';
-    ph.textContent = 'Coming soon';
-    fig.appendChild(ph);
-    return fig;
-  }
-  const a = document.createElement('a');
-  a.href = item.full || item.image;
-  a.className = 'lb';
-  a.setAttribute('data-cap', `${item.title || ''}${item.year ? ` · ${item.year}`:''}${item.medium ? ` · ${item.medium}`:''}`);
-  const img = document.createElement('img');
-  img.loading = 'lazy'; img.decoding = 'async';
-  img.src = item.image || item.full;
-  img.alt = `${item.title||'Artwork'}${item.year?`, ${item.year}`:''}${item.medium?`, ${item.medium}`:''}`;
+/* --------------------------- Helpers --------------------------- */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const on = (el, ev, fn, opt) => el && el.addEventListener(ev, fn, opt);
+
+/* Turn "PortraitB1.jpg" → "Portrait B1" */
+function humanizeFilename(file) {
+  const name = file.split("/").pop().replace(/\.[a-z0-9]+$/i, "");
+  return name.replace(/[-_]+/g, " ").replace(/([a-z])([0-9])/gi, "$1 $2");
+}
+
+function makeCard(src, caption = "") {
+  const fig = document.createElement("figure");
+  fig.className = "card";
+
+  const a = document.createElement("a");
+  a.href = BASE + src;
+  a.className = "lb";
+  a.setAttribute("aria-label", "Open image");
+
+  const img = document.createElement("img");
+  img.loading = "lazy";
+  img.decoding = "async";
+  img.src = BASE + src;
+  img.alt = caption || humanizeFilename(src);
+
   a.appendChild(img);
   fig.appendChild(a);
-  const cap = document.createElement('figcaption');
-  cap.textContent = item.title || '';
-  fig.appendChild(cap);
-  if (item.status === 'Sold' || item.sold) {
-    const b = document.createElement('div'); b.className='badge'; b.textContent='Sold'; fig.appendChild(b);
-  }
+
+  // Optional caption (comment out if you prefer no under-text)
+  // const fc = document.createElement("figcaption");
+  // fc.textContent = caption || humanizeFilename(src);
+  // fig.appendChild(fc);
+
   return fig;
-};
+}
 
-/* --------------- Renderers --------------- */
-function renderCarousel(mount, items=[], target=10, pad=true){
+function renderRows(mountId, rows) {
+  const mount = document.getElementById(mountId);
   if (!mount) return;
-  const slides = fitList(items, target, pad);
-  slides.forEach(it => {
-    const cell = document.createElement('div');
-    cell.className = 'slide';
-    cell.appendChild(imgEl(it));
-    mount.appendChild(cell);
-  });
-  // autoplay only when visible
-  if (items.length > 1) {
-    let i=0, timer=null;
-    const go = n => {
-      const w = mount.querySelector('.slide')?.offsetWidth || 0;
-      mount.scrollTo({ left: n*w + n*parseInt(getComputedStyle(mount).gap||'0',10), behavior:'smooth' });
-    };
-    const io = new IntersectionObserver(es=>{
-      es.forEach(e=>{
-        if (e.isIntersecting) {
-          timer = setInterval(()=>{ i = (i+1)%items.length; go(i); }, 3500);
-        } else { clearInterval(timer); }
-      });
-    }, {threshold:0.3});
-    io.observe(mount.closest('.carousel'));
+
+  if (!rows || rows.length === 0) {
+    const empty = document.getElementById(mountId.replace("rows-", "") + "-empty");
+    if (empty) empty.hidden = false;
+    return;
   }
-}
 
-function renderGrid(mount, items=[]){
-  if (!mount) return;
-  if (!items.length){ mount.innerHTML = '<p class="muted">More coming soon.</p>'; return; }
   const frag = document.createDocumentFragment();
-  items.forEach(it => frag.appendChild(imgEl(it)));
+  rows.forEach(list => {
+    const row = document.createElement("div");
+    row.className = "row";
+    list.forEach(file => row.appendChild(makeCard(file)));
+    frag.appendChild(row);
+  });
   mount.appendChild(frag);
-}
 
-function renderFilmstrip(rail, items=[]){
-  if (!rail) return;
-  if (!items.length) return;
-  const frag = document.createDocumentFragment();
-  items.forEach(it=>{
-    const img = document.createElement('img');
-    img.loading='lazy'; img.decoding='async';
-    img.src = it.image || it.full;
-    img.alt = it.title || 'Artwork';
-    frag.appendChild(img);
-  });
-  rail.appendChild(frag);
-}
-
-function renderScrubbers(mount, items=[]){
-  if (!mount) return;
-  const pairs = items.filter(x => x.under); // needs an 'under' image
-  pairs.forEach(it=>{
-    const wrap = document.createElement('div'); wrap.className='scrub';
-    wrap.innerHTML = `
-      <img class="base" src="${it.full || it.image}" alt="${it.title||'Final'}">
-      <img class="top"  src="${it.under}" alt="${it.title||'Underdrawing'} (under)">
-      <div class="ui"><input class="range" type="range" value="50" min="0" max="100" aria-label="Reveal underdrawing"></div>
-    `;
-    const r = $('.range', wrap);
-    const set = v => wrap.style.setProperty('--cut', `${100-v}%`);
-    on(r, 'input', e => set(e.target.value));
-    set(r.value);
-    mount.appendChild(wrap);
-  });
-}
-
-/* --------------- Lightbox (simple) --------------- */
-const LB = {
-  el: $('#lightbox'), img: $('#lb-img'), cap: $('#lb-cap'),
-  btnX: $('.lb-close'), btnP: $('.lb-prev'), btnN: $('.lb-next'),
-  items: [], index: 0
-};
-function openLB(i){
-  LB.index = i;
-  const it = LB.items[i];
-  LB.img.src = it.href;
-  LB.img.alt = it.alt || '';
-  LB.cap.textContent = it.cap || '';
-  LB.el.hidden = false;
-}
-function closeLB(){ LB.el.hidden = true; }
-function nextLB(d=1){
-  LB.index = (LB.index + d + LB.items.length) % LB.items.length;
-  openLB(LB.index);
-}
-function wireLightbox(){
-  const links = $$('.lb');
-  LB.items = links.map(a => ({ href:a.href, cap:a.dataset.cap, alt:$('img',a)?.alt || '' }));
-  links.forEach((a,i)=> on(a,'click', (e)=>{ e.preventDefault(); openLB(i); }));
-  on(LB.btnX,'click', closeLB);
-  on(LB.btnN,'click', ()=>nextLB(+1));
-  on(LB.btnP,'click', ()=>nextLB(-1));
-  on(LB.el,'click', (e)=>{ if(e.target===LB.el) closeLB(); });
-  on(document,'keydown', (e)=> {
-    if (LB.el.hidden) return;
-    if (e.key==='Escape') closeLB();
-    if (e.key==='ArrowRight') nextLB(+1);
-    if (e.key==='ArrowLeft') nextLB(-1);
-  });
-}
-
-/* --------------- Scroll effects & IO --------------- */
-function stackedHero(){
-  const panels = $$('.panel');
-  const onScroll = () => {
-    panels.forEach(p=>{
-      const r = p.getBoundingClientRect();
-      const t = Math.min(Math.max(1 - r.top/innerHeight,0),1); // 0..1
-      p.style.setProperty('--o', 0.25 + 0.75*t);
-      p.style.setProperty('--py', `${(1-t)*16}px`);
-    });
-  };
-  on(window,'scroll', onScroll, {passive:true});
-  onScroll();
-}
-function filmstripMotion(){
-  const rails = $$('.film .rail');
-  const onScroll = ()=> rails.forEach(rail=>{
-    rail.style.transform = `translateX(${-(scrollY*0.15)%400}px)`;
-  });
-  on(window,'scroll', onScroll, {passive:true});
-  onScroll();
-}
-function ioRevealsAndDock(){
-  const dockLinks = $$('.bottom-dock a');
-  const io = new IntersectionObserver(es=>{
-    es.forEach(e=>{
-      e.target.classList.toggle('in', e.isIntersecting);
-      if (e.isIntersecting){
-        const id = '#' + e.target.id;
-        dockLinks.forEach(a => a.classList.toggle('active-chip', a.getAttribute('href')===id));
-        // top nav active
-        $$('.nav a').forEach(a => a.classList.toggle('active', a.getAttribute('href')===id));
+  // Enable wheel-to-horizontal for convenience on desktop trackpads/mice
+  $$(".row", mount).forEach(row => {
+    on(row, "wheel", (e) => {
+      if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+        row.scrollLeft += e.deltaY;
+        e.preventDefault();
       }
-    });
-  }, {threshold:0.15});
-  $$('[data-io]').forEach(el=> io.observe(el));
-}
-
-/* --------------- View Transitions (cross-fade) --------------- */
-function softInternalNav(){
-  document.addEventListener('click', (e)=>{
-    const a = e.target.closest('a[href^="#"]');
-    if(!a) return;
-    // normal anchor scroll; we just add a tiny highlight via :target behavior (handled by CSS if desired)
+    }, { passive: false });
   });
 }
 
-/* --------------- Boot --------------- */
-async function boot(){
-  // Load data (try JSON, else sample)
-  let items = [];
-  try {
-    const res = await fetch(DATA_URL, {cache:'no-store'});
-    if (res.ok) items = await res.json();
-    else items = SAMPLE_DATA;
-  } catch { items = SAMPLE_DATA; }
+/* --------------------------- Lightbox -------------------------- */
+const LB = { el: null, img: null, cap: null };
 
-  // Group
-  const cats = byCategory(items);
+function wireLightbox() {
+  LB.el  = $("#lightbox");
+  LB.img = $("#lb-img");
+  LB.cap = $("#lb-cap");
 
-  // Render per section
-  renderCarousel($('#track-portraits'),     cats['portraits'], 12, true);
-  renderGrid    ($('#grid-portraits'),      cats['portraits']);
+  const links = $$(".lb");
+  links.forEach(a =>
+    on(a, "click", e => {
+      e.preventDefault();
+      const img = $("img", a);
+      LB.img.src = a.href;
+      LB.img.alt = img?.alt || "";
+      LB.cap.textContent = img?.alt || "";
+      LB.el.hidden = false;
+    })
+  );
 
-  renderCarousel($('#track-still-life'),    cats['still-life'], 10, true);
-  renderGrid    ($('#grid-still-life'),     cats['still-life']);
-
-  renderFilmstrip($('#rail-plein-air'),     cats['plein-air']);
-  renderGrid    ($('#grid-plein-air'),      cats['plein-air']);
-
-  renderCarousel($('#track-life-drawing'),  cats['life-drawing'], 8, true);
-  renderGrid    ($('#grid-life-drawing'),   cats['life-drawing']);
-
-  renderScrubbers($('#scrub-wrap'),         cats['underdrawings']);
-  renderGrid    ($('#grid-underdrawings'),  cats['underdrawings']);
-
-  // Interactions
-  wireLightbox();
-  stackedHero();
-  filmstripMotion();
-  ioRevealsAndDock();
-  softInternalNav();
+  on($(".lb-close"), "click", () => (LB.el.hidden = true));
+  on(LB.el, "click", (e) => { if (e.target === LB.el) LB.el.hidden = true; });
+  on(document, "keydown", (e) => { if (e.key === "Escape") LB.el.hidden = true; });
 }
-boot();
+
+/* ---------------------- Smooth section nav --------------------- */
+function smoothNav() {
+  const headerLinks = $$(".nav a");
+  const dockLinks   = $$(".bottom-dock a");
+  const allLinks    = [...headerLinks, ...dockLinks];
+
+  allLinks.forEach(a =>
+    on(a, "click", (e) => {
+      const href = a.getAttribute("href") || "";
+      if (!href.startsWith("#")) return;
+      const target = document.querySelector(href);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.replaceState(null, "", href);
+    })
+  );
+
+  // Active highlighting as sections enter view
+  const map = new Map(allLinks.map(a => [a.getAttribute("href"), a]));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const id = "#" + entry.target.id;
+      allLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === id));
+      // bottom dock chip style
+      $$(".bottom-dock a").forEach(link =>
+        link.classList.toggle("active-chip", link.getAttribute("href") === id)
+      );
+    });
+  }, { threshold: 0.2 });
+
+  $$("section[id]").forEach(sec => io.observe(sec));
+}
+
+/* ------------------------- Intro video ------------------------- */
+function introFlow() {
+  const intro = $("#intro");
+  const vid   = $("#introVideo");
+  const skip  = $("#skipIntro");
+
+  const endIntro = () => {
+    intro.classList.add("hide");
+    // Move focus to main for accessibility after fade
+    setTimeout(() => $("#main")?.focus?.(), 300);
+  };
+
+  // Autoplay end (best path)
+  on(vid, "ended", endIntro);
+  // Fallback timeout (~10s)
+  setTimeout(() => { if (!intro.classList.contains("hide")) endIntro(); }, 10000);
+  // Manual "Skip"
+  on(skip, "click", endIntro);
+
+  // If autoplay is blocked (rare with muted), user scroll should hide intro
+  on(window, "scroll", () => {
+    if (!intro.classList.contains("hide") && window.scrollY > 40) endIntro();
+  }, { passive: true });
+}
+
+/* --------------------------- Boot ------------------------------ */
+function boot() {
+  // Render rows in the exact order you specified
+  renderRows("rows-life",        DATA.life);
+  renderRows("rows-portrait",    DATA.portrait);
+  renderRows("rows-still",       DATA.still);
+  renderRows("rows-exhibitions", DATA.exhibitions);
+  renderRows("rows-sketches",    DATA.sketches);
+
+  wireLightbox();
+  smoothNav();
+  introFlow();
+}
+
+document.addEventListener("DOMContentLoaded", boot);
