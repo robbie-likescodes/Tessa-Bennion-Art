@@ -1,90 +1,57 @@
 /* =========================================================
-   Academic Painter — Styles (bg-painter.css)
-   - Canvas background overlay
-   - Static palette button on margin
-   - Sparkle lure
+   Academic Painter — bg-painter.css
+   - Background canvas (non-blocking)
+   - Header palette button with sparkle
    - Toast notifications
 ========================================================= */
 
-/* Fullscreen paint canvas (behind content) */
+/* ---- Background canvas (always behind, inert to clicks) ---- */
 #ap-canvas {
   position: fixed;
   inset: 0;
-  z-index: 0;
-  pointer-events: none; /* only accepts events when unlocked */
+  z-index: 0;            /* stays under page content */
+  pointer-events: none;  /* never intercepts interactions */
   background: transparent;
 }
 
-/* Toast message for unlock/lock feedback */
-#ap-toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(40, 40, 40, 0.88);
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-family: system-ui, sans-serif;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.35s;
-  z-index: 1000;
-}
-#ap-toast.show { opacity: 1; }
-
-/* =========================================================
-   Palette activator button
-========================================================= */
-
+/* ---- Palette button (inserted into .site-header by JS) ---- */
 .ap-palette {
-  position: fixed;
-  right: 12px;             /* change to left:12px; if you want left margin */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 64px;
-  height: 50px;
-  z-index: 3;
+  /* Header grid places it in column 2; no fixed positioning here */
+  width: 40px;
+  height: 32px;
   display: grid;
   place-items: center;
-  cursor: pointer;
-  opacity: 0.9;
-  filter: drop-shadow(0 3px 12px rgba(0,0,0,.18));
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
   background: none;
   border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,.15));
 }
-
-.ap-palette:focus-visible {
-  outline: 2px solid #2B55AE; /* ultramarine accent */
-  outline-offset: 3px;
-}
-
-/* SVG painter’s palette base */
 .ap-palette svg {
   width: 100%;
   height: 100%;
   display: block;
-  border-radius: 16px;
+}
+.ap-palette:focus-visible {
+  outline: 2px solid #2B55AE; /* ultramarine accent */
+  outline-offset: 2px;
 }
 
-/* Sparkle lure */
+/* Tiny sparkle lure near one paint well */
 .ap-sparkle {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle,
-              #fff 0%,
-              rgba(255,255,255,.9) 40%,
-              rgba(255,255,255,0) 70%);
+  background: radial-gradient(circle, #fff 0%, rgba(255,255,255,.9) 40%, rgba(255,255,255,0) 70%);
   opacity: 0;
   transform: scale(.6) translate(-4px,-4px);
   animation: ap-twinkle 2.8s ease-in-out infinite;
-  top: 6px;
-  left: 40px; /* position sparkle near a “paint well” */
+  top: 2px;
+  right: -2px;
   mix-blend-mode: screen;
 }
 
@@ -94,14 +61,24 @@
   100%    { opacity: 0; transform: scale(.6) translate(-4px,-4px); }
 }
 
-/* Reduce motion users get no sparkle */
 @media (prefers-reduced-motion: reduce) {
   .ap-sparkle { animation: none; opacity: 0; }
 }
 
-/* Hover lift effect on desktop */
-@media (pointer:fine) {
-  .ap-palette:hover {
-    transform: translateY(-50%) translateX(-1px);
-  }
+/* ---- Toast (brief status) ---- */
+#ap-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40, 40, 40, 0.88);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font: 500 0.9rem/1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
+  z-index: 9999;
 }
+#ap-toast.show { opacity: 1; }
