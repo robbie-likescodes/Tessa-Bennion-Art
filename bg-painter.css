@@ -1,65 +1,107 @@
 /* =========================================================
-   Academic Painter — bg-painter.css
-   - Hidden canvas overlay for painting background pigments
-   - Scoped classes to avoid conflicts
-   - Toast message for activation
+   Academic Painter — Styles (bg-painter.css)
+   - Canvas background overlay
+   - Static palette button on margin
+   - Sparkle lure
+   - Toast notifications
 ========================================================= */
 
+/* Fullscreen paint canvas (behind content) */
 #ap-canvas {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  z-index: -1;                /* sits behind your content */
-  pointer-events: none;       /* content stays interactive */
+  inset: 0;
+  z-index: 0;
+  pointer-events: none; /* only accepts events when unlocked */
   background: transparent;
 }
 
-#ap-canvas.active {
-  z-index: 0;                 /* brought just under content */
-  pointer-events: auto;       /* accepts paint gestures */
-  touch-action: none;         /* prevent accidental scrolling while painting */
-  cursor: crosshair;
-}
-
-/* Pigment blobs (activation points) */
-.ap-blob {
-  position: fixed;
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  opacity: 0.4;
-  z-index: 2;
-  pointer-events: auto;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-.ap-blob:hover {
-  opacity: 0.8;
-  transform: scale(1.2);
-}
-
-/* Toast notification */
+/* Toast message for unlock/lock feedback */
 #ap-toast {
   position: fixed;
-  bottom: 1rem; left: 50%;
+  bottom: 20px;
+  left: 50%;
   transform: translateX(-50%);
-  background: rgba(40, 20, 10, 0.9);
-  color: #fdfdfd;
-  font-family: "EB Garamond", serif;
+  background: rgba(40, 40, 40, 0.88);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
   font-size: 0.9rem;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  font-family: system-ui, sans-serif;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.4s ease;
-  z-index: 9999;
+  transition: opacity 0.35s;
+  z-index: 1000;
 }
-#ap-toast.show {
-  opacity: 1;
+#ap-toast.show { opacity: 1; }
+
+/* =========================================================
+   Palette activator button
+========================================================= */
+
+.ap-palette {
+  position: fixed;
+  right: 12px;             /* change to left:12px; if you want left margin */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 64px;
+  height: 50px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.9;
+  filter: drop-shadow(0 3px 12px rgba(0,0,0,.18));
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  background: none;
+  border: none;
 }
 
-/* Accessibility / reduced motion */
+.ap-palette:focus-visible {
+  outline: 2px solid #2B55AE; /* ultramarine accent */
+  outline-offset: 3px;
+}
+
+/* SVG painter’s palette base */
+.ap-palette svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 16px;
+}
+
+/* Sparkle lure */
+.ap-sparkle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle,
+              #fff 0%,
+              rgba(255,255,255,.9) 40%,
+              rgba(255,255,255,0) 70%);
+  opacity: 0;
+  transform: scale(.6) translate(-4px,-4px);
+  animation: ap-twinkle 2.8s ease-in-out infinite;
+  top: 6px;
+  left: 40px; /* position sparkle near a “paint well” */
+  mix-blend-mode: screen;
+}
+
+@keyframes ap-twinkle {
+  0%, 60% { opacity: 0; transform: scale(.6) translate(-4px,-4px); }
+  70%     { opacity: .9; transform: scale(1) translate(0,0); }
+  100%    { opacity: 0; transform: scale(.6) translate(-4px,-4px); }
+}
+
+/* Reduce motion users get no sparkle */
 @media (prefers-reduced-motion: reduce) {
-  .ap-blob, #ap-toast {
-    transition: none;
+  .ap-sparkle { animation: none; opacity: 0; }
+}
+
+/* Hover lift effect on desktop */
+@media (pointer:fine) {
+  .ap-palette:hover {
+    transform: translateY(-50%) translateX(-1px);
   }
 }
