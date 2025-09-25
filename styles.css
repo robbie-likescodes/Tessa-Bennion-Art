@@ -226,6 +226,52 @@ img, video {
   object-fit: cover;
 }
 
+/* Prevent horizontal scroll anywhere */
+html, body { overflow-x: hidden; }
+
+/* Main layout remains centered */
+.section { max-width: var(--maxw); margin: 0 auto; }
+
+/* Vertical list of collections (center each card) */
+.stacks{
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+.stack-row{ width: 100%; display: grid; place-items: center; }
+
+/* If any mount still has 'rows', force vertical */
+.rows.stacks{
+  overflow: visible !important;
+  scroll-snap-type: none !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+}
+
+/* Flip card: fill line, centered; consume pointer gestures horizontally */
+.flipstack{
+  width: min(92vw, 560px);
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  perspective: 900px;
+  /* Critical: let JS handle horizontal gestures; prevents page from side-scrolling */
+  touch-action: none;
+}
+
+/* Videos row (Exhibitions) stays horizontally scrollable */
+#rows-exhibitions.rows { overflow-x: auto; }
+
+/* Palette mount spacing so the injected button sits nicely */
+#ap-palette-mount { display: inline-flex; margin-left: .5rem; }
+
+/* (Keep the rest of your existing CSS as-is) */
+
+
 /* Keep video cards consistent */
 .card video{
   aspect-ratio: 16/9; /* change to 4/5 if you prefer portrait video look */
