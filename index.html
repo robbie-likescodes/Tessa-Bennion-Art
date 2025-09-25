@@ -7,7 +7,7 @@
   <meta name="description" content="The portfolio of Tessa Bennion — life, portrait, still life, exhibitions, sketches, and artist statement." />
   <meta name="color-scheme" content="light only" />
 
-  <!-- Fonts: cursive for brand, serif for body -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=EB+Garamond:wght@400;600&display=swap" rel="stylesheet">
@@ -15,16 +15,13 @@
   <!-- Styles -->
   <link rel="preload" href="styles.css" as="style">
   <link rel="stylesheet" href="styles.css">
-  <!-- Hidden painter add-on styles -->
   <link rel="stylesheet" href="bg-painter.css">
 </head>
 <body>
 
-  <!-- ===================== Intro / Landing Video ===================== -->
-  <!-- Hybrid fallback: MOV first (exists now), MP4 for future -->
+  <!-- ===================== Intro / Landing Video (mp4) ===================== -->
   <div id="intro" class="intro" aria-label="Intro video">
     <video id="introVideo" class="intro-video" autoplay muted playsinline preload="auto">
-      <source src="uploads/VidA1.MOV" type="video/quicktime" />
       <source src="uploads/VidA1.mp4" type="video/mp4" />
     </video>
     <div class="intro-overlay" aria-hidden="true">
@@ -33,26 +30,25 @@
     <button id="skipIntro" class="skip-intro" aria-label="Skip intro">Skip</button>
   </div>
 
-  <!-- ===================== Site Header / Centered Menu ===================== -->
+  <!-- ===================== Header (wide Menu + palette + profile) ===================== -->
   <header class="site-header" role="banner">
-    <!-- Centered Menu trigger -->
+    <!-- Wide centered Menu trigger (palette and profile sit to its right via CSS grid) -->
     <button class="menu-trigger" id="menuTrigger" aria-expanded="false" aria-controls="menuDropdown">
       Menu
     </button>
 
-    <!-- Profile (top-right) -->
+    <!-- Profile (top-right). Palette button is injected by bg-painter.js into this header. -->
     <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
 
     <!-- Dropdown Menu -->
     <div class="menu-dropdown" id="menuDropdown" hidden>
-      <!-- “Art” points to the first art section (Life).
-           If you later wrap all art in <section id="art">, just change href to #art -->
+      <!-- “Art” points to the first art section (Life). Change to #art later if you wrap all art. -->
       <a href="#life" class="menu-link">Art</a>
       <a href="#about" class="menu-link">About Me</a>
       <a href="#contact" class="menu-link">Contact</a>
     </div>
 
-    <!-- Click-off overlay for closing dropdown -->
+    <!-- Click-off overlay (closes dropdown) -->
     <div class="menu-overlay" id="menuOverlay" hidden></div>
   </header>
 
@@ -77,7 +73,7 @@
       <div class="rows" id="rows-still"></div>
     </section>
 
-    <!-- EXHIBITIONS -->
+    <!-- EXHIBITIONS (VidA2.mp4 & VidA3.mp4 will render here horizontally via app.js) -->
     <section id="exhibitions" class="section" data-io aria-labelledby="exhibitions-title">
       <h2 id="exhibitions-title" class="section-title">Exhibitions</h2>
       <div class="rows" id="rows-exhibitions"></div>
@@ -122,7 +118,7 @@
     <a href="#sketches">Sketches</a>
   </nav>
 
-  <!-- ===================== Lightbox (minimal) ===================== -->
+  <!-- ===================== Lightbox (images only) ===================== -->
   <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" hidden>
     <button class="lb-close" aria-label="Close">×</button>
     <img id="lb-img" alt="" />
