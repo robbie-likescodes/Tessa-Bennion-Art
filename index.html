@@ -42,7 +42,6 @@
 
     <!-- Dropdown Menu -->
     <div class="menu-dropdown" id="menuDropdown" hidden>
-      <!-- “Art” points to the first art section (Life). Change to #art later if you wrap all art. -->
       <a href="#life" class="menu-link">Art</a>
       <a href="#about" class="menu-link">About Me</a>
       <a href="#contact" class="menu-link">Contact</a>
@@ -55,35 +54,39 @@
   <!-- ===================== Main Content ===================== -->
   <main id="main" tabindex="-1">
 
-    <!-- LIFE -->
+    <!-- LIFE (vertical list of collections A, B, C … ; each collection is a flip stack) -->
     <section id="life" class="section" data-io aria-labelledby="life-title">
       <h2 id="life-title" class="section-title">Life</h2>
-      <div class="rows" id="rows-life"></div>
+      <div class="stacks" id="rows-life"></div>
+      <p class="muted small" id="life-empty" hidden>More life studies coming soon.</p>
     </section>
 
-    <!-- PORTRAIT -->
+    <!-- PORTRAIT (vertical list; flip inside each collection) -->
     <section id="portrait" class="section" data-io aria-labelledby="portrait-title">
       <h2 id="portrait-title" class="section-title">Portrait</h2>
-      <div class="rows" id="rows-portrait"></div>
+      <div class="stacks" id="rows-portrait"></div>
+      <p class="muted small" id="portrait-empty" hidden>More portraits coming soon.</p>
     </section>
 
-    <!-- STILL LIFE -->
+    <!-- STILL LIFE (vertical list; flip inside each collection) -->
     <section id="still" class="section" data-io aria-labelledby="still-title">
       <h2 id="still-title" class="section-title">Still Life</h2>
-      <div class="rows" id="rows-still"></div>
+      <div class="stacks" id="rows-still"></div>
+      <p class="muted small" id="still-empty" hidden>More still lifes coming soon.</p>
     </section>
 
-    <!-- EXHIBITIONS (VidA2.mp4 & VidA3.mp4 will render here horizontally via app.js) -->
+    <!-- EXHIBITIONS (VidA2.mp4 & VidA3.mp4 render horizontally here) -->
     <section id="exhibitions" class="section" data-io aria-labelledby="exhibitions-title">
       <h2 id="exhibitions-title" class="section-title">Exhibitions</h2>
       <div class="rows" id="rows-exhibitions"></div>
       <p class="muted small" id="exhibitions-empty" hidden>More exhibitions coming soon.</p>
     </section>
 
-    <!-- SKETCHES -->
+    <!-- SKETCHES (vertical list; flip inside each collection) -->
     <section id="sketches" class="section" data-io aria-labelledby="sketches-title">
       <h2 id="sketches-title" class="section-title">Sketches</h2>
-      <div class="rows" id="rows-sketches"></div>
+      <div class="stacks" id="rows-sketches"></div>
+      <p class="muted small" id="sketches-empty" hidden>More sketches coming soon.</p>
     </section>
 
     <!-- ABOUT -->
@@ -128,7 +131,9 @@
   <!-- ===================== Noscript fallback ===================== -->
   <noscript>
     <style>
-      #intro{ display:none!important; } .rows{ display:block; }
+      #intro{ display:none!important; }
+      .rows{ display:block; }
+      .stacks{ display:block; }
     </style>
     <div role="note" class="muted small" style="padding:1rem;">
       JavaScript is disabled — the interactive galleries are not available.
