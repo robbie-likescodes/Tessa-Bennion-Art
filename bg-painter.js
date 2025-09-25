@@ -29,9 +29,7 @@
     { h: 105, s: 0.35, v: 0.55 }  // oxide green
   ];
 
-  /* NEW: only these are off-limits to start a paint stroke.
-     If the pointerdown starts on one of these, we DON'T paint
-     (so clicking/scrolling/swiping keeps working there). */
+  /* Only these are off-limits to start a paint stroke. */
   const AP_DISALLOW_SELECTOR =
     'a, button, input, textarea, select, ' +
     'img, video, ' +
@@ -135,7 +133,7 @@
 
   // ---------------- UI Injection ----------------
   function injectUI() {
-    // Palette button (top-right area by your header/profile)
+    // Palette button
     const btn = document.createElement('button');
     btn.className = 'ap-palette';
     btn.type = 'button';
@@ -158,9 +156,21 @@
       </svg>
       <span class="ap-sparkle"></span>
     `;
-    document.body.appendChild(btn);
+    // Prefer docking inside header mount; fallback to fixed button
+    const mount = document.getElementById('ap-palette-mount');
+    if (mount) {
+      mount.appendChild(btn);
+      btn.style.position = 'static';
+    } else {
+      document.body.appendChild(btn);
+      btn.style.position = 'fixed';
+      btn.style.top = '10px';
+      btn.style.right = '56px';
+      btn.style.zIndex = '901';
+    }
     els.palette = btn;
 
+    // Toast
     const toast = document.createElement('div');
     toast.id = 'ap-toast';
     toast.setAttribute('role', 'status');
@@ -187,7 +197,7 @@
   function beginPaintFrom(e) {
     ensureCanvas();
     state.painting = true;
-    document.body.classList.add('ap-painting-active'); // NEW: stop page scroll while painting
+    document.body.classList.add('ap-painting-active'); // stop page scroll while painting
     state.lastPt = getPoint(e);
     state.lastT = performance.now();
     state.lastSpeed = 0.3;
@@ -323,7 +333,7 @@
 
     // Document-level pointer routing (lets us paint across elements)
     document.addEventListener('pointerdown', onPointerDown, { passive: false });
-    document.addEventListener('pointermove', onPointerMove, { passive: false }); // need preventDefault during stroke
+    document.addEventListener('pointermove', onPointerMove, { passive: false });
     document.addEventListener('pointerup', onPointerUp, { passive: true });
     document.addEventListener('pointercancel', onPointerUp, { passive: true });
 
@@ -344,4 +354,3 @@
     init();
   }
 })();
-
