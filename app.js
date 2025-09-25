@@ -1,10 +1,8 @@
 /* =========================================================
-   Tessa Bennion — app.js (mp4 intro + auto grouping + video cards)
+   Tessa Bennion — app.js (intro 6s hold + hard remove, menu autoclose, profile→about)
 ========================================================= */
 
 /* ------------ List your files (exact names) ------------ */
-/* TIP: You only list files; grouping is automatic.
-   When you add new images/videos later, just append here. */
 const FILES = {
   life: [
     "LifeA1.jpeg", "LifeA2.jpeg",
@@ -14,28 +12,18 @@ const FILES = {
   portrait: [
     "PortraitA1.JPEG",
     "PortaitB1.jpeg", "PortrainB2.jpeg", "PortraitB3.PNG",
-    "PortraitC1.jpeg",
-    "PortraitD1.jpeg",
-    "PortraitE1.jpeg",
-    "PortraitF1.jpeg",
-    "PortraitG1.jpeg",
-    "PortraitH1.jpeg"
+    "PortraitC1.jpeg", "PortraitD1.jpeg", "PortraitE1.jpeg",
+    "PortraitF1.jpeg", "PortraitG1.jpeg", "PortraitH1.jpeg"
   ],
   still: [
     "StillA1.jpeg", "StillA2.JPG", "StillA3.JPEG", "StillA4.jpeg",
     "StillB1.jpeg"
   ],
   exhibitions: [
-    // New: show these two videos as a horizontal collection
     "VidA2.mp4", "VidA3.mp4"
-    // Add any posters or images here as well; they’ll auto-group.
   ],
   sketches: [
-    "SketchA1.jpeg",
-    "SketchB1.jpeg",
-    "SketchC1.jpeg",
-    "SketchD1.jpeg",
-    "SketchE1.jpeg"
+    "SketchA1.jpeg","SketchB1.jpeg","SketchC1.jpeg","SketchD1.jpeg","SketchE1.jpeg"
   ]
 };
 
@@ -48,23 +36,15 @@ const on = (el, ev, fn, opt) => el && el.addEventListener(ev, fn, opt);
 
 function ext(name){ return (name.split(".").pop() || "").toLowerCase(); }
 function isVideo(name){ return ext(name) === "mp4"; }
-function isImage(name){ return ["jpg","jpeg","png","gif","webp","avif","png"].includes(ext(name)); }
+function baseName(name){ return name.replace(/\.[a-z0-9]+$/i, ""); }
 
-function baseName(name){
-  return name.replace(/\.[a-z0-9]+$/i, "");
-}
-
-/* Series key:
-   - Match: Letters + ONE capital letter + digits (e.g., PortraitB12 → key "PortraitB")
-   - Else: use the whole base name so it forms its own row
-*/
+/* Series key: PortraitB1 → "PortraitB" (letters + ONE capital + digits) */
 function seriesKey(name){
   const b = baseName(name);
   const m = b.match(/^([A-Za-z]+[A-Z])[0-9]+$/);
   return m ? m[1] : b;
 }
 
-/* Group files into rows by series key, and sort items in a row by number suffix */
 function groupIntoRows(fileList){
   const map = new Map();
   for(const f of fileList){
@@ -72,9 +52,8 @@ function groupIntoRows(fileList){
     if(!map.has(key)) map.set(key, []);
     map.get(key).push(f);
   }
-  // sort inside each row by trailing number if present
   const rows = [];
-  map.forEach((arr) => {
+  map.forEach(arr => {
     arr.sort((a,b) => {
       const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
       const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
@@ -82,7 +61,6 @@ function groupIntoRows(fileList){
     });
     rows.push(arr);
   });
-  // Optional: stable order by first item’s name to keep predictable stacking
   rows.sort((ra, rb) => (ra[0] < rb[0] ? -1 : 1));
   return rows;
 }
@@ -96,18 +74,15 @@ function humanizeFilename(file) {
 function makeImageCard(src, caption = "") {
   const fig = document.createElement("figure");
   fig.className = "card";
-
   const a = document.createElement("a");
   a.href = BASE + src;
   a.className = "lb";
   a.setAttribute("aria-label", "Open image");
-
   const img = document.createElement("img");
   img.loading = "lazy";
   img.decoding = "async";
   img.src = BASE + src;
   img.alt = caption || humanizeFilename(src);
-
   a.appendChild(img);
   fig.appendChild(a);
   return fig;
@@ -116,20 +91,13 @@ function makeImageCard(src, caption = "") {
 function makeVideoCard(src) {
   const fig = document.createElement("figure");
   fig.className = "card";
-
   const v = document.createElement("video");
   v.src = BASE + src;
   v.playsInline = true;
   v.controls = true;
   v.preload = "metadata";
-  v.muted = true;          // less intrusive on mobile
-  v.loop = false;          // change to true if you prefer loops in rails
+  v.muted = true;
   fig.appendChild(v);
-
-  // Optionally autoplay on visibility (commented out)
-  // const io = new IntersectionObserver((es)=>{ es.forEach(e=>{ if(e.isIntersecting) v.play().catch(()=>{}); else v.pause(); }); }, {threshold: 0.6});
-  // io.observe(v);
-
   return fig;
 }
 
@@ -169,7 +137,6 @@ function renderGroupedRows(mountId, fileList) {
 }
 
 /* --------------------------- Lightbox -------------------------- */
-/* For images only (videos are playable inline) */
 const LB = { el: null, img: null, cap: null };
 function wireLightbox() {
   LB.el  = $("#lightbox");
@@ -195,7 +162,7 @@ function wireLightbox() {
 
 /* ---------------------- Smooth section nav --------------------- */
 function smoothNav() {
-  const headerLinks = $$(".nav a");            // (legacy hidden, harmless)
+  const headerLinks = $$(".nav a");            // legacy hidden; harmless
   const dockLinks   = $$(".bottom-dock a");
   const menuLinks   = $$(".menu-dropdown a");  // dropdown links
   const allLinks    = [...headerLinks, ...dockLinks, ...menuLinks];
@@ -237,36 +204,83 @@ function menuControls(){
   const close = () => { btn.setAttribute('aria-expanded','false'); drop.hidden = true;  veil.hidden = true;  };
   const toggle = () => (btn.getAttribute('aria-expanded') === 'true' ? close() : open());
 
+  // Force closed on load (in case browser restores state)
+  close();
+
   btn.addEventListener('click', toggle);
   veil.addEventListener('click', close);
-  document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') close(); });
+
+  // Auto-close on scroll, resize, or hashchange
+  window.addEventListener('scroll', close, { passive: true });
+  window.addEventListener('resize', close);
+  window.addEventListener('hashchange', close);
+
+  // Close when picking a link
   drop.querySelectorAll('a').forEach(a=> a.addEventListener('click', close));
 }
 
 /* ------------------------- Intro video ------------------------- */
+/* Show ~6s, then fade and remove completely */
 function introFlow() {
   const intro = $("#intro");
   const vid   = $("#introVideo");
   const skip  = $("#skipIntro");
+  const SHOW_MS = 6000; // desired visible time
 
-  const endIntro = () => {
-    if (intro.classList.contains("hide")) return;
+  if (!intro || !vid) return;
+
+  let hideTimer = null;
+  let ended = false;
+
+  const hardHide = () => {
+    if (!intro || intro.classList.contains("hide")) return;
     intro.classList.add("hide");
-    setTimeout(() => $("#main")?.focus?.(), 300);
+    // Remove intro from DOM after transition so no overlay remains
+    const onTransEnd = () => {
+      intro.removeEventListener("transitionend", onTransEnd);
+      try {
+        vid.pause();
+        vid.removeAttribute("src");
+        vid.load();
+      } catch {}
+      intro.remove();
+    };
+    intro.addEventListener("transitionend", onTransEnd);
   };
 
-  // Try to play proactively (some devices require an explicit call)
-  if (vid) {
-    const tryPlay = () => vid.play().catch(()=>{ /* ignore */ });
-    if (vid.readyState >= 2) tryPlay();
-    else vid.addEventListener("canplay", tryPlay, { once: true });
-  }
+  const scheduleHide = () => {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      if (!ended) hardHide();
+    }, SHOW_MS);
+  };
 
-  on(vid, "ended", endIntro);
-  // Fallback timeout (~10s) in case mp4 can’t play
-  setTimeout(() => { if (!intro.classList.contains("hide")) endIntro(); }, 10000);
-  on(skip, "click", endIntro);
-  on(window, "scroll", () => { if (!intro.classList.contains("hide") && window.scrollY > 40) endIntro(); }, { passive: true });
+  // Prefer starting the 6s timer when the video is actually playing
+  on(vid, "playing", scheduleHide);
+  on(vid, "canplay", () => { if (vid.paused) vid.play().catch(()=>{}); });
+  on(vid, "loadeddata", () => { if (vid.paused) vid.play().catch(()=>{}); });
+
+  // If for some reason "playing" never fires, start a fallback timer after 1.5s
+  setTimeout(() => {
+    if (!hideTimer) scheduleHide();
+  }, 1500);
+
+  // If video ends early, fade immediately
+  on(vid, "ended", () => { ended = true; hardHide(); });
+
+  // Manual skip
+  on(skip, "click", hardHide);
+
+  // (Removed: auto-dismiss on small scroll to prevent accidental early hide)
+}
+
+/* ---------------- Profile → About link ---------------- */
+function profileLink(){
+  const prof = document.querySelector(".profile");
+  const about = document.querySelector("#about");
+  if (!prof || !about) return;
+  prof.style.cursor = "pointer";
+  on(prof, "click", () => about.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
 /* --------------------------- Boot ------------------------------ */
@@ -274,13 +288,15 @@ function boot() {
   renderGroupedRows("rows-life",        FILES.life);
   renderGroupedRows("rows-portrait",    FILES.portrait);
   renderGroupedRows("rows-still",       FILES.still);
-  renderGroupedRows("rows-exhibitions", FILES.exhibitions); // includes VidA2/VidA3.mp4
+  renderGroupedRows("rows-exhibitions", FILES.exhibitions);
   renderGroupedRows("rows-sketches",    FILES.sketches);
 
   wireLightbox();
   smoothNav();
   menuControls();
   introFlow();
+  profileLink();
 }
 
 document.addEventListener("DOMContentLoaded", boot);
+
