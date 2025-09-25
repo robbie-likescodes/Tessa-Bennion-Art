@@ -1,38 +1,43 @@
 /* =========================================================
-   Academic Painter — bg-painter.js (header palette, phone-first painting)
-   - Palette injected into .site-header (beside profile)
-   - Single-tap unlock (no long-press needed)
-   - Paint behind content; never hijack scroll if gesture starts on content
-   - While painting: temporarily disable page scroll (touchAction:none)
-   - DPR-aware; pressure/speed responsive; earthy color drift
-   - Auto-relock after inactivity; ESC to relock
+   Academic Painter — bg-painter.js (updated)
+   - Paint anywhere that's NOT a direct interactive target
+   - While painting, page won't scroll (re-enabled when you lift)
+   - Palette tap unlock; top-edge long-press also unlocks
+   - Earthy color drift, DPR-aware canvas
 ========================================================= */
 
 (() => {
   // ---------------- Config ----------------
-  const HOLD_TO_UNLOCK_MS = 700;      // long-press in top margin (Easter egg; optional)
+  const HOLD_TO_UNLOCK_MS = 700;      // long-press in top margin
+  const HOLD_ON_PALETTE_MS = 600;     // long-press on palette
   const INACTIVITY_MS     = 6000;     // auto-relock after no input
   const TOP_UNLOCK_BOUNDS = 80;       // top 80px region
-  const MAX_BRUSH         = 72;       // max brush radius px
-  const MIN_BRUSH         = 10;       // min brush radius px
-  const OPACITY           = 0.16;     // per-dab base alpha
-  const JITTER_HUE        = 4;        // ± hue jitter deg
-  const JITTER_VAL        = 0.06;     // ± value jitter
-  const COLOR_EASE        = 0.06;     // drift toward anchor
+  const MAX_BRUSH         = 72;
+  const MIN_BRUSH         = 10;
+  const OPACITY           = 0.16;
+  const JITTER_HUE        = 4;
+  const JITTER_VAL        = 0.06;
+  const COLOR_EASE        = 0.06;
 
-  // Earthy anchors (Yellow Ochre, Burnt Sienna/Umber, Alizarin, Ultramarine, Oxide Green)
+  // Earthy anchors
   const EARTHS = [
-    { h: 45,  s: 0.35, v: 0.86 },
-    { h: 16,  s: 0.50, v: 0.55 },
-    { h: 25,  s: 0.40, v: 0.40 },
-    { h: 350, s: 0.45, v: 0.55 },
-    { h: 220, s: 0.45, v: 0.55 },
-    { h: 105, s: 0.35, v: 0.55 }
+    { h: 45,  s: 0.35, v: 0.86 }, // yellow ochre
+    { h: 16,  s: 0.50, v: 0.55 }, // burnt sienna
+    { h: 25,  s: 0.40, v: 0.40 }, // umber
+    { h: 350, s: 0.45, v: 0.55 }, // alizarin-ish
+    { h: 220, s: 0.45, v: 0.55 }, // ultramarine
+    { h: 105, s: 0.35, v: 0.55 }  // oxide green
   ];
 
-  // Do NOT start painting if a gesture begins on these (unless stylus/pen)
+  /* NEW: only these are off-limits to start a paint stroke.
+     If the pointerdown starts on one of these, we DON'T paint
+     (so clicking/scrolling/swiping keeps working there). */
   const AP_DISALLOW_SELECTOR =
-    'img, figure, .card, .row, .grid, a, .nav, header, .site-header, .bottom-dock, .lb, video, button, .menu-dropdown, .menu-link, .menu-trigger, input, textarea, select';
+    'a, button, input, textarea, select, ' +
+    'img, video, ' +
+    '.menu-trigger, #menuTrigger, .menu-dropdown, ' +
+    '.bottom-dock, header, .site-header, ' +
+    '.lightbox, .lb, #lightbox';
 
   // ---------------- State ----------------
   const state = {
@@ -52,7 +57,7 @@
 
   // ---------------- Utils ----------------
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-  const lerp = (a, b, t) => a + (b - a) * t;
+  const lerp  = (a, b, t) => a + (b - a) * t;
 
   function hsbToRgba(h, s, v, a = 1) {
     const C = v * s;
@@ -107,6 +112,11 @@
     if (els.canvas) return;
     const c = document.createElement('canvas');
     c.id = 'ap-canvas';
+    // Paint sits behind everything
+    c.style.position = 'fixed';
+    c.style.inset = '0';
+    c.style.zIndex = '0';
+    c.style.pointerEvents = 'none'; // we listen on document, not the canvas
     document.body.prepend(c);
     els.canvas = c;
     els.ctx = c.getContext('2d', { alpha: true, desynchronized: true });
@@ -125,8 +135,7 @@
 
   // ---------------- UI Injection ----------------
   function injectUI() {
-    // Palette button goes inside header (column near profile)
-    const header = document.querySelector('.site-header') || document.body;
+    // Palette button (top-right area by your header/profile)
     const btn = document.createElement('button');
     btn.className = 'ap-palette';
     btn.type = 'button';
@@ -149,10 +158,9 @@
       </svg>
       <span class="ap-sparkle"></span>
     `;
-    header.appendChild(btn);
+    document.body.appendChild(btn);
     els.palette = btn;
 
-    // Toast
     const toast = document.createElement('div');
     toast.id = 'ap-toast';
     toast.setAttribute('role', 'status');
@@ -173,28 +181,26 @@
   function relock() {
     state.unlocked = false;
     endPaint();
-    // subtle: no toast on relock
   }
 
   // ---------------- Painting Engine ----------------
   function beginPaintFrom(e) {
     ensureCanvas();
     state.painting = true;
+    document.body.classList.add('ap-painting-active'); // NEW: stop page scroll while painting
     state.lastPt = getPoint(e);
     state.lastT = performance.now();
     state.lastSpeed = 0.3;
-    // stop page from scrolling during this gesture; restored on endPaint()
-    document.body.style.touchAction = 'none';
     kickInactivity();
-    // seed a tiny dab
+    // seed a tiny dab so users see immediate feedback
     dot(state.lastPt.x, state.lastPt.y, 1);
-    e.preventDefault();
   }
 
   function endPaint() {
+    if (!state.painting) return;
     state.painting = false;
+    document.body.classList.remove('ap-painting-active'); // restore normal scrolling
     state.lastPt = null;
-    document.body.style.touchAction = '';
   }
 
   function getPoint(e) {
@@ -207,18 +213,21 @@
   function onPointerDown(e) {
     if (!state.unlocked) return;
 
-    // If gesture starts on content, do NOT paint (unless stylus)
-    if (apIsDisallowedTarget(e.target) && e.pointerType !== 'pen') {
+    // If the gesture starts on an interactive thing (image/video/button/link/etc), DO NOT paint.
+    if (apIsDisallowedTarget(e.target)) {
       endPaint();
-      return; // allow natural scroll/interaction
+      return; // let the page handle tap/scroll/swipe normally
     }
 
+    // Otherwise, start painting and prevent the page from scrolling.
+    e.preventDefault();
     beginPaintFrom(e);
   }
 
   function onPointerMove(e) {
     if (!state.painting) return;
     kickInactivity();
+    e.preventDefault(); // keep the stroke from panning the page
 
     const pt = getPoint(e);
     const t = performance.now();
@@ -226,18 +235,17 @@
     const dy = pt.y - state.lastPt.y;
     const dt = Math.max(1, t - state.lastT);
     const speed = Math.sqrt(dx*dx + dy*dy) / dt; // px/ms
-
     state.lastSpeed = lerp(state.lastSpeed, speed, 0.35);
 
-    // brush size from speed & pressure
-    const size = clamp(MIN_BRUSH + (state.lastSpeed * 450) * (0.4 + pt.p * 0.9), MIN_BRUSH, MAX_BRUSH);
+    const size = clamp(
+      MIN_BRUSH + (state.lastSpeed * 450) * (0.4 + pt.p * 0.9),
+      MIN_BRUSH, MAX_BRUSH
+    );
 
-    // color drift
     easeColor();
     if (Math.random() < 0.02) pickNewTarget();
     const c = jitterColor(state.colorCur);
 
-    // multiple dabs for oil texture
     const steps = 1 + ((size / 28) | 0);
     for (let i=0; i<steps; i++) {
       const ox = (Math.random()*2-1) * size * 0.18;
@@ -287,10 +295,22 @@
   }
   function onTopHoldEnd() { clearTimeout(holdTimer); }
 
-  // Palette interactions
   function bindPalette() {
     // Single tap/click unlock
     els.palette.addEventListener('click', () => unlock(), { passive: true });
+
+    // Double-click unlock (desktop convenience)
+    els.palette.addEventListener('dblclick', () => unlock());
+
+    // Long-press unlock (touch)
+    let pressTimer = null;
+    els.palette.addEventListener('pointerdown', () => {
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(() => unlock(), HOLD_ON_PALETTE_MS);
+    }, { passive: true });
+    ['pointerup','pointercancel','pointerleave'].forEach(ev =>
+      els.palette.addEventListener(ev, () => clearTimeout(pressTimer), { passive: true })
+    );
   }
 
   // ESC to relock
@@ -301,13 +321,13 @@
     injectUI();
     ensureCanvas();
 
-    // Pointer routing (document-level to allow painting across elements)
+    // Document-level pointer routing (lets us paint across elements)
     document.addEventListener('pointerdown', onPointerDown, { passive: false });
-    document.addEventListener('pointermove', onPointerMove, { passive: true });
+    document.addEventListener('pointermove', onPointerMove, { passive: false }); // need preventDefault during stroke
     document.addEventListener('pointerup', onPointerUp, { passive: true });
     document.addEventListener('pointercancel', onPointerUp, { passive: true });
 
-    // Optional top-margin Easter-egg unlock
+    // Unlock gestures
     document.addEventListener('pointerdown', onTopHoldStart, { passive: true });
     document.addEventListener('pointerup', onTopHoldEnd, { passive: true });
     document.addEventListener('pointercancel', onTopHoldEnd, { passive: true });
@@ -315,7 +335,6 @@
     bindPalette();
     document.addEventListener('keydown', onKey, { passive: true });
 
-    // Safety
     window.addEventListener('blur', () => endPaint());
   }
 
@@ -325,3 +344,4 @@
     init();
   }
 })();
+
