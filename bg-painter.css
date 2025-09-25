@@ -1,58 +1,65 @@
-/* --- Academic Painter — isolated styles (ap-*) --- */
-:root {
-  --ap-paper: #efe5d6;
-  --ap-ink:   #3b342d;
-}
+/* =========================================================
+   Academic Painter — bg-painter.css
+   - Hidden canvas overlay for painting background pigments
+   - Scoped classes to avoid conflicts
+   - Toast message for activation
+========================================================= */
 
 #ap-canvas {
   position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none; /* toggled by JS when painting */
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;                /* sits behind your content */
+  pointer-events: none;       /* content stays interactive */
+  background: transparent;
 }
 
-.ap-toast{
+#ap-canvas.active {
+  z-index: 0;                 /* brought just under content */
+  pointer-events: auto;       /* accepts paint gestures */
+  touch-action: none;         /* prevent accidental scrolling while painting */
+  cursor: crosshair;
+}
+
+/* Pigment blobs (activation points) */
+.ap-blob {
   position: fixed;
-  left: 50%;
-  bottom: 20px;
-  transform: translateX(-50%) translateY(30px);
-  z-index: 9999;
-  background: rgba(30,24,20,0.85);
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 13px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  opacity: 0.4;
+  z-index: 2;
+  pointer-events: auto;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.ap-blob:hover {
+  opacity: 0.8;
+  transform: scale(1.2);
+}
+
+/* Toast notification */
+#ap-toast {
+  position: fixed;
+  bottom: 1rem; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40, 20, 10, 0.9);
+  color: #fdfdfd;
+  font-family: "EB Garamond", serif;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   opacity: 0;
   pointer-events: none;
-  transition: opacity .25s ease, transform .25s ease;
+  transition: opacity 0.4s ease;
+  z-index: 9999;
 }
-.ap-toast.ap-show{
+#ap-toast.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 
-.ap-blob{
-  position: fixed;
-  right: 14px;
-  bottom: 14px;
-  z-index: 9998;
-  border: none;
-  padding: 0;
-  background: none;
-  cursor: pointer;
-  opacity: 0.85;
-  transition: transform .25s ease, opacity .25s ease;
-  touch-action: none;
-}
-.ap-blob:hover{ opacity: 1; }
-.ap-blob:active{ transform: scale(0.98); }
-
-.ap-holding-hint{
-  outline: 1px dashed rgba(60,50,45,0.22);
-  outline-offset: -2px;
-}
-
-body.ap-painting-active{
-  touch-action: none; /* prevent scroll while painting */
+/* Accessibility / reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ap-blob, #ap-toast {
+    transition: none;
+  }
 }
