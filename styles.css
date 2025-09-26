@@ -387,7 +387,7 @@ img, video{
 #ap-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
 /* While painting, lock page scroll (bg-painter toggles this class) */
-.ap-painting-active{ touch-action:none; }
+.ap-painting-active{ touch-action: auto; }
 
 /* ---------------- Utility ---------------- */
 .muted{ color:var(--muted); }
