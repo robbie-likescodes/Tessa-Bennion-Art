@@ -31,35 +31,33 @@
     <button id="skipIntro" class="skip-intro" aria-label="Skip intro">Skip</button>
   </div>
 
-  <!-- ===================== Header (profile left • centered title • hamburger right) ===================== -->
+  <!-- ===================== Header (center Menu + palette + profile) ===================== -->
   <header class="site-header" role="banner">
-    <!-- Left: profile (tap → About) -->
-    <button class="profile-btn" id="profileBtn" aria-label="Go to About">
-      <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
+    <!-- Centered Menu trigger -->
+    <button class="menu-trigger" id="menuTrigger" aria-expanded="false" aria-controls="menuDropdown">
+      Menu
     </button>
 
-    <!-- Center: title -->
-    <div class="site-title">Art by Tessa Bennion</div>
+    <!-- Optional palette mount (bg-painter can dock here) -->
+    <span id="ap-palette-mount" aria-hidden="true"></span>
 
-    <!-- Right: hamburger → opens side drawer -->
-    <button class="hamburger" id="hamburgerBtn" aria-expanded="false" aria-controls="sideDrawer" aria-label="Open menu">
-      <span></span><span></span><span></span>
-    </button>
-  </header>
+    <!-- Profile (tap → About) -->
+    <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
 
-  <!-- Slide-out side drawer + overlay -->
-  <aside id="sideDrawer" class="side-drawer" hidden>
-    <nav class="drawer-nav" aria-label="Site">
-      <a href="#portrait"    class="drawer-link">Portrait</a>
-      <a href="#still"       class="drawer-link">Still Life</a>
-      <a href="#life"        class="drawer-link">Life</a>
-      <a href="#exhibitions" class="drawer-link">Exhibitions</a>
-      <a href="#sketches"    class="drawer-link">Sketches</a>
-      <a href="#about"       class="drawer-link">About</a>
-      <a href="#contact"     class="drawer-link">Contact</a>
+    <!-- Dropdown Menu (ordered to match page) -->
+    <nav class="menu-dropdown" id="menuDropdown" hidden>
+      <a href="#portrait"    class="menu-link">Portrait</a>
+      <a href="#still"       class="menu-link">Still Life</a>
+      <a href="#life"        class="menu-link">Life</a>
+      <a href="#exhibitions" class="menu-link">Exhibitions</a>
+      <a href="#sketches"    class="menu-link">Sketches</a>
+      <a href="#about"       class="menu-link">About Me</a>
+      <a href="#contact"     class="menu-link">Contact</a>
     </nav>
-  </aside>
-  <div id="drawerOverlay" class="drawer-overlay" hidden></div>
+
+    <!-- Click-off overlay (closes dropdown) -->
+    <div class="menu-overlay" id="menuOverlay" hidden></div>
+  </header>
 
   <!-- ===================== Main Content ===================== -->
   <main id="main" tabindex="-1">
