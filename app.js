@@ -6,7 +6,7 @@
 /* ------------ List your files (exact names) ------------ */
 const FILES = {
   life: [
-    "LifeA1.jpeg", "LifeA2.jpeg",
+    "LifeA1.jpeg", 
     "LifeB1.jpeg", "LifeB2.jpeg", "LifeB3.jpeg",
     "LifeC1.jpeg", "LifeC2.jpeg"
   ],
