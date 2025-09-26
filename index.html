@@ -2,12 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Prevent sideways zoom/pan on iOS (optional: improves stability; reduces pinch-zoom) -->
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <!-- Prevent sideways zoom/pan on iOS; allow safe areas -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Tessa Bennion Art</title>
-  <meta name="description" content="The portfolio of Tessa Bennion — life, portrait, still life, exhibitions, sketches, and artist statement." />
+  <meta name="description" content="The portfolio of Tessa Bennion — portraits, still life, life studies, exhibitions, sketches, and artist statement." />
   <meta name="color-scheme" content="light only" />
 
   <!-- Fonts -->
@@ -33,25 +31,29 @@
     <button id="skipIntro" class="skip-intro" aria-label="Skip intro">Skip</button>
   </div>
 
-  <!-- ===================== Header (wide Menu + palette + profile) ===================== -->
+  <!-- ===================== Header (center Menu + palette + profile) ===================== -->
   <header class="site-header" role="banner">
-    <!-- Wide centered Menu trigger (palette and profile sit to its right via CSS grid) -->
+    <!-- Centered Menu trigger -->
     <button class="menu-trigger" id="menuTrigger" aria-expanded="false" aria-controls="menuDropdown">
       Menu
     </button>
 
-    <!-- Optional palette mount (your bg-painter can choose to dock here) -->
+    <!-- Optional palette mount (bg-painter can dock here) -->
     <span id="ap-palette-mount" aria-hidden="true"></span>
 
     <!-- Profile (tap → About) -->
     <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
 
-    <!-- Dropdown Menu -->
-    <div class="menu-dropdown" id="menuDropdown" hidden>
-      <a href="#life" class="menu-link">Art</a>
-      <a href="#about" class="menu-link">About Me</a>
-      <a href="#contact" class="menu-link">Contact</a>
-    </div>
+    <!-- Dropdown Menu (ordered to match page) -->
+    <nav class="menu-dropdown" id="menuDropdown" hidden>
+      <a href="#portrait"    class="menu-link">Portrait</a>
+      <a href="#still"       class="menu-link">Still Life</a>
+      <a href="#life"        class="menu-link">Life</a>
+      <a href="#exhibitions" class="menu-link">Exhibitions</a>
+      <a href="#sketches"    class="menu-link">Sketches</a>
+      <a href="#about"       class="menu-link">About Me</a>
+      <a href="#contact"     class="menu-link">Contact</a>
+    </nav>
 
     <!-- Click-off overlay (closes dropdown) -->
     <div class="menu-overlay" id="menuOverlay" hidden></div>
@@ -60,35 +62,35 @@
   <!-- ===================== Main Content ===================== -->
   <main id="main" tabindex="-1">
 
-    <!-- LIFE (vertical list of collections A, B, C … ; each collection is a flip stack) -->
-    <section id="life" class="section" data-io aria-labelledby="life-title">
-      <h2 id="life-title" class="section-title">Life</h2>
-      <div class="stacks" id="rows-life"></div>
-      <p class="muted small" id="life-empty" hidden>More life studies coming soon.</p>
-    </section>
-
-    <!-- PORTRAIT (vertical list; flip inside each collection) -->
+    <!-- PORTRAIT -->
     <section id="portrait" class="section" data-io aria-labelledby="portrait-title">
       <h2 id="portrait-title" class="section-title">Portrait</h2>
       <div class="stacks" id="rows-portrait"></div>
       <p class="muted small" id="portrait-empty" hidden>More portraits coming soon.</p>
     </section>
 
-    <!-- STILL LIFE (vertical list; flip inside each collection) -->
+    <!-- STILL LIFE -->
     <section id="still" class="section" data-io aria-labelledby="still-title">
       <h2 id="still-title" class="section-title">Still Life</h2>
       <div class="stacks" id="rows-still"></div>
       <p class="muted small" id="still-empty" hidden>More still lifes coming soon.</p>
     </section>
 
-    <!-- EXHIBITIONS (VidA2.mp4 & VidA3.mp4 render horizontally here) -->
+    <!-- LIFE -->
+    <section id="life" class="section" data-io aria-labelledby="life-title">
+      <h2 id="life-title" class="section-title">Life</h2>
+      <div class="stacks" id="rows-life"></div>
+      <p class="muted small" id="life-empty" hidden>More life studies coming soon.</p>
+    </section>
+
+    <!-- EXHIBITIONS (videos render horizontally here) -->
     <section id="exhibitions" class="section" data-io aria-labelledby="exhibitions-title">
       <h2 id="exhibitions-title" class="section-title">Exhibitions</h2>
       <div class="rows" id="rows-exhibitions"></div>
       <p class="muted small" id="exhibitions-empty" hidden>More exhibitions coming soon.</p>
     </section>
 
-    <!-- SKETCHES (vertical list; flip inside each collection) -->
+    <!-- SKETCHES -->
     <section id="sketches" class="section" data-io aria-labelledby="sketches-title">
       <h2 id="sketches-title" class="section-title">Sketches</h2>
       <div class="stacks" id="rows-sketches"></div>
@@ -104,7 +106,7 @@
       <div class="about-copy">
         <p><strong>Tessa Bennion</strong> is an academic painter working primarily in oil, charcoal, and graphite. Her practice balances direct observation with long-form studio work.</p>
         <p>She draws inspiration from classical ateliers, museum study, and the rhythms of everyday life. Portraits, still life arrangements, and plein air studies are forms of expressing her soul and the moments that capture her attention.</p>
-        <p>When not at the easel, Tessa is either enjoying the mountains in the State of Alaska or somewhere in anchorage singing jazz/funk fusion for her band the Work Shoes. This site is a living catalog of finished works, process notes, and the drawings that knit it all together.</p>
+        <p>When not at the easel, Tessa is either enjoying the mountains in the State of Alaska or somewhere in Anchorage singing jazz/funk fusion for her band the Work Shoes. This site is a living catalog of finished works, process notes, and the drawings that knit it all together.</p>
       </div>
     </section>
 
@@ -114,22 +116,23 @@
       <p>For commissions, exhibitions, or studio visits, email
         <a href="mailto:tessa99.b@hotmail.com">tessa99.b@hotmail.com</a>.
       </p>
+
+      <!-- Instagram row -->
       <div class="social-links">
-  <a href="https://www.instagram.com/tessabennionart" target="_blank" rel="noopener">
-    <img src="uploads/instagram-icon.svg" alt="Instagram logo" class="social-icon">
-    <span>@tessabennionart</span>
-  </a>
-</div>
-      
+        <a href="https://www.instagram.com/tessabennionart" target="_blank" rel="noopener">
+          <img src="uploads/instalogo.png" alt="Instagram" class="social-icon" width="24" height="24">
+          <span>@tessabennionart</span>
+        </a>
+      </div>
     </section>
 
   </main>
 
   <!-- ===================== Bottom Dock (thumb-reachable nav) ===================== -->
   <nav class="bottom-dock" aria-label="Quick Sections">
-    <a href="#life">Life</a>
     <a href="#portrait">Portrait</a>
     <a href="#still">Still</a>
+    <a href="#life">Life</a>
     <a href="#exhibitions">Exhibitions</a>
     <a href="#sketches">Sketches</a>
   </nav>
