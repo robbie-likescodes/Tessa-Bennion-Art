@@ -1,5 +1,6 @@
 /* =========================================================
-   Tessa Bennion — app.js (intro 6s hold → two-stage fade, menu autoclose, profile→about)
+   Tessa Bennion — app.js (intro 6s hold → two-stage fade,
+   menu autoclose, profile→about, modern app-bar drawer)
 ========================================================= */
 
 /* ------------ List your files (exact names) ------------ */
@@ -16,7 +17,7 @@ const FILES = {
     "PortraitF1.jpeg", "PortraitG1.jpeg", "PortraitH1.jpeg"
   ],
   still: [
-    "StillA1.jpeg", 
+    "StillA1.jpeg",
     "StillB1.jpeg"
   ],
   exhibitions: [
@@ -295,7 +296,8 @@ function wireLightbox() {
 function smoothNav() {
   const dockLinks   = $$(".bottom-dock a");
   const menuLinks   = $$(".menu-dropdown a");
-  const allLinks    = [...dockLinks, ...menuLinks];
+  const drawerLinks = $$(".drawer-links a");   // NEW: app-bar drawer links
+  const allLinks    = [...dockLinks, ...menuLinks, ...drawerLinks];
 
   allLinks.forEach(a =>
     on(a, "click", (e) => {
@@ -323,7 +325,7 @@ function smoothNav() {
   $$("section[id]").forEach(sec => io.observe(sec));
 }
 
-/* ----------------------- Menu dropdown UX ---------------------- */
+/* ----------------------- Legacy dropdown UX -------------------- */
 function menuControls(){
   const btn   = document.getElementById('menuTrigger');
   const drop  = document.getElementById('menuDropdown');
@@ -354,6 +356,43 @@ function menuControls(){
 
   // Close when picking a link
   drop.querySelectorAll('a').forEach(a=> a.addEventListener('click', close));
+}
+
+/* ----------------------- App-bar drawer UX (NEW) --------------- */
+function drawerControls(){
+  const burger  = $(".burger");
+  const drawer  = $(".side-drawer");
+  const overlay = $(".drawer-overlay");
+
+  if (!burger || !drawer || !overlay) return; // only runs if new markup exists
+
+  const open = () => {
+    burger.setAttribute("aria-expanded","true");
+    drawer.hidden = false;
+    overlay.hidden = false;
+    // lock background scroll on iOS/Android while drawer is open
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+  };
+  const close = () => {
+    burger.setAttribute("aria-expanded","false");
+    drawer.hidden = true;
+    overlay.hidden = true;
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+  };
+  const toggle = () => (burger.getAttribute("aria-expanded")==="true" ? close() : open());
+
+  burger.addEventListener("click", toggle);
+  overlay.addEventListener("click", close);
+
+  // Close on ESC
+  document.addEventListener("keydown", (e)=>{
+    if (e.key === "Escape" && burger.getAttribute("aria-expanded")==="true") close();
+  });
+
+  // Close when picking a link
+  $$(".drawer-links a").forEach(a => a.addEventListener("click", close));
 }
 
 /* ------------------------- Intro video ------------------------- */
@@ -405,17 +444,27 @@ function introFlow() {
 
 /* ---------------- Profile → About link ---------------- */
 function profileLink(){
-  const prof = document.querySelector(".profile");
+  // Legacy header avatar
+  const profLegacy = document.querySelector(".site-header .profile");
+  // New app-bar avatar (inside .avatar-btn or direct .app-bar .profile)
+  const profNew = document.querySelector(".app-bar .profile");
+
   const about = document.querySelector("#about");
-  if (!prof || !about) return;
-  prof.style.cursor = "pointer";
-  on(prof, "click", () =>
-    about.scrollIntoView({ behavior: "smooth", block: "start" })
-  );
+  if (!about) return;
+
+  const bind = (el) => {
+    if (!el) return;
+    el.style.cursor = "pointer";
+    on(el, "click", () =>
+      about.scrollIntoView({ behavior: "smooth", block: "start" })
+    );
+  };
+
+  bind(profLegacy);
+  bind(profNew);
 }
 
 /* --------- Global scroll gating: only scroll when touch starts on art --------- */
-/* We rely on native scrolling and only cancel touchmoves that start OFF art. */
 function gateScrollToArt() {
   // art selectors (images, videos, stacks, etc.)
   const ART_SELECTOR = `
@@ -465,7 +514,12 @@ function boot() {
 
   wireLightbox();
   smoothNav();
+
+  // Legacy dropdown (if present)
   menuControls();
+  // New app-bar drawer (if present)
+  drawerControls();
+
   introFlow();
   profileLink();
   gateScrollToArt();
