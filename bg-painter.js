@@ -1,9 +1,10 @@
 /* =========================================================
-   Academic Painter — bg-painter.js (updated)
+   Academic Painter — bg-painter.js (FADING STROKES)
    - Paint anywhere that's NOT a direct interactive target
    - While painting, page won't scroll (re-enabled when you lift)
    - Palette tap unlock; top-edge long-press also unlocks
    - Earthy color drift, DPR-aware canvas
+   - NEW: each dab fades out and disappears ~3s after being placed
 ========================================================= */
 
 (() => {
@@ -18,6 +19,9 @@
   const JITTER_HUE        = 4;
   const JITTER_VAL        = 0.06;
   const COLOR_EASE        = 0.06;
+
+  // NEW: how long a dab should live before fully disappearing
+  const LIFESPAN_MS       = 3000;
 
   // Earthy anchors
   const EARTHS = [
@@ -47,8 +51,12 @@
     inactivity: null,
     dpr: Math.max(1, Math.min(3, window.devicePixelRatio || 1)),
     colorCur: { ...EARTHS[0] },
-    colorTarget: { ...EARTHS[1] }
+    colorTarget: { ...EARTHS[1] },
+    animRunning: false
   };
+
+  // Retained-mode list of dabs that fade out over time
+  const dabs = []; // each: {x,y, rx, ry, rot, h,s,v, alpha0, birth}
 
   // ---------------- Elements ----------------
   const els = { canvas: null, ctx: null, palette: null, toast: null };
@@ -129,6 +137,63 @@
     };
     resize();
     addEventListener('resize', resize, { passive: true });
+
+    // Start the animation loop for fade-out rendering
+    startAnim();
+  }
+
+  // ---------------- Animation loop (retained rendering) ----------------
+  function startAnim() {
+    if (state.animRunning) return;
+    state.animRunning = true;
+
+    const step = (now) => {
+      // clear whole canvas
+      const ctx = els.ctx;
+      if (!ctx) { state.animRunning = false; return; }
+      ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+
+      // draw all live dabs, drop expired ones
+      const out = [];
+      for (let i = 0; i < dabs.length; i++) {
+        const d = dabs[i];
+        const age = now - d.birth;
+        if (age >= LIFESPAN_MS) continue; // expired
+
+        const lifeT = 1 - (age / LIFESPAN_MS); // 1 → 0
+        drawDab(d, lifeT);
+        out.push(d);
+      }
+      // keep only survivors
+      dabs.length = 0;
+      Array.prototype.push.apply(dabs, out);
+
+      // keep going
+      requestAnimationFrame(step);
+    };
+
+    requestAnimationFrame(step);
+  }
+
+  function drawDab(d, lifeT) {
+    const ctx = els.ctx; if (!ctx) return;
+    const alpha = d.alpha0 * lifeT;
+
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    ctx.rotate(d.rot);
+
+    const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(d.rx, d.ry));
+    const rgbaCore = hsbToRgba(d.h, d.s, d.v, alpha);
+    grd.addColorStop(0.0, rgbaCore);
+    grd.addColorStop(0.8, hsbToRgba(d.h, d.s * 0.8, d.v * 0.85, alpha * 0.45));
+    grd.addColorStop(1.0, hsbToRgba(d.h, d.s * 0.6, d.v * 0.75, 0));
+    ctx.fillStyle = grd;
+
+    ctx.beginPath();
+    ctx.ellipse(0, 0, d.rx, d.ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   // ---------------- UI Injection ----------------
@@ -260,7 +325,7 @@
     for (let i=0; i<steps; i++) {
       const ox = (Math.random()*2-1) * size * 0.18;
       const oy = (Math.random()*2-1) * size * 0.18;
-      dab(pt.x + ox, pt.y + oy, size * (0.9 + Math.random()*0.2), c, OPACITY * (0.9 + Math.random()*0.2));
+      pushDab(pt.x + ox, pt.y + oy, size * (0.9 + Math.random()*0.2), c, OPACITY * (0.9 + Math.random()*0.2));
     }
 
     state.lastPt = pt;
@@ -273,26 +338,20 @@
 
   function dot(x, y, k = 1) {
     const c = jitterColor(state.colorCur);
-    dab(x, y, MIN_BRUSH * k, c, OPACITY);
+    pushDab(x, y, MIN_BRUSH * k, c, OPACITY);
   }
 
-  function dab(x, y, size, colorHSB, alpha) {
-    const ctx = els.ctx; if (!ctx) return;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate((Math.random()*2-1) * 0.25);
-    const rx = size * (0.72 + Math.random()*0.20);
-    const ry = size * (0.95 + Math.random()*0.15);
-    const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(rx, ry));
-    const rgbaCore = hsbToRgba(colorHSB.h, colorHSB.s, colorHSB.v, alpha);
-    grd.addColorStop(0.0, rgbaCore);
-    grd.addColorStop(0.8, hsbToRgba(colorHSB.h, colorHSB.s * 0.8, colorHSB.v * 0.85, alpha * 0.45));
-    grd.addColorStop(1.0, hsbToRgba(colorHSB.h, colorHSB.s * 0.6, colorHSB.v * 0.75, 0));
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
+  // NEW: retained "dab" record (rendered each frame, then fades out)
+  function pushDab(x, y, size, colorHSB, alpha0) {
+    const rot = (Math.random()*2-1) * 0.25;
+    const rx  = size * (0.72 + Math.random()*0.20);
+    const ry  = size * (0.95 + Math.random()*0.15);
+    dabs.push({
+      x, y, rx, ry, rot,
+      h: colorHSB.h, s: colorHSB.s, v: colorHSB.v,
+      alpha0,
+      birth: performance.now()
+    });
   }
 
   // ---------------- Unlock Gestures ----------------
