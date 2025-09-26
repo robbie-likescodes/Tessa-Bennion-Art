@@ -31,33 +31,47 @@
     <button id="skipIntro" class="skip-intro" aria-label="Skip intro">Skip</button>
   </div>
 
-  <!-- ===================== Header (center Menu + palette + profile) ===================== -->
-  <header class="site-header" role="banner">
-    <!-- Centered Menu trigger -->
-    <button class="menu-trigger" id="menuTrigger" aria-expanded="false" aria-controls="menuDropdown">
-      Menu
+  <!-- ===================== Header (modern app bar) ===================== -->
+  <header class="app-bar" role="banner">
+    <!-- Left: profile (tap → About) -->
+    <button id="profileBtn" class="avatar-btn" aria-label="Go to About">
+      <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
     </button>
 
-    <!-- Optional palette mount (bg-painter can dock here) -->
-    <span id="ap-palette-mount" aria-hidden="true"></span>
+    <!-- Center: brand title -->
+    <h1 class="brand-title" aria-label="Site title">Tessa Bennion Fine Art</h1>
 
-    <!-- Profile (tap → About) -->
-    <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
-
-    <!-- Dropdown Menu (ordered to match page) -->
-    <nav class="menu-dropdown" id="menuDropdown" hidden>
-      <a href="#portrait"    class="menu-link">Portrait</a>
-      <a href="#still"       class="menu-link">Still Life</a>
-      <a href="#life"        class="menu-link">Life</a>
-      <a href="#exhibitions" class="menu-link">Exhibitions</a>
-      <a href="#sketches"    class="menu-link">Sketches</a>
-      <a href="#about"       class="menu-link">About Me</a>
-      <a href="#contact"     class="menu-link">Contact</a>
-    </nav>
-
-    <!-- Click-off overlay (closes dropdown) -->
-    <div class="menu-overlay" id="menuOverlay" hidden></div>
+    <!-- Right: two-line hamburger (rotates to X) -->
+    <button id="burgerBtn" class="burger" aria-label="Open menu"
+            aria-expanded="false" aria-controls="sideDrawer">
+      <span class="burger__line"></span>
+      <span class="burger__line"></span>
+    </button>
   </header>
+
+  <!-- Slide-out drawer + overlay (replaces old dropdown/overlay) -->
+  <nav id="sideDrawer" class="side-drawer" role="dialog" aria-modal="true" hidden>
+    <div class="drawer-inner">
+      <ul class="drawer-links" role="menu">
+        <li><a href="#portrait"    role="menuitem">Portrait</a></li>
+        <li><a href="#still"       role="menuitem">Still Life</a></li>
+        <li><a href="#life"        role="menuitem">Life</a></li>
+        <li><a href="#exhibitions" role="menuitem">Exhibitions</a></li>
+        <li><a href="#sketches"    role="menuitem">Sketches</a></li>
+        <li class="sep"></li>
+        <li><a href="#about"       role="menuitem">About Me</a></li>
+        <li><a href="#contact"     role="menuitem">Contact</a></li>
+      </ul>
+
+      <div class="drawer-social">
+        <a href="https://www.instagram.com/tessabennionart" target="_blank" rel="noopener">
+          <img src="uploads/instalogo.png" alt="" width="20" height="20">
+          <span>@tessabennionart</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+  <div id="drawerOverlay" class="drawer-overlay" hidden></div>
 
   <!-- ===================== Main Content ===================== -->
   <main id="main" tabindex="-1">
