@@ -11,7 +11,7 @@ const FILES = {
   ],
   portrait: [
     "PortraitA1.JPEG",
-    "PortaitB1.jpeg", "PortrainB2.jpeg", "PortraitB3.PNG",
+    "PortraitB1.jpeg", "PortraitB2.jpeg", "PortraitB3.PNG",
     "PortraitC1.jpeg", "PortraitD1.jpeg", "PortraitE1.jpeg",
     "PortraitF1.jpeg", "PortraitG1.jpeg", "PortraitH1.jpeg"
   ],
