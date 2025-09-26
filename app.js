@@ -404,6 +404,13 @@ function introFlow() {
   const skip  = $("#skipIntro");
   if (!intro || !vid) return;
 
+    vid.muted = true;
+  vid.autoplay = true;
+  vid.playsInline = true;                // property
+  vid.setAttribute("playsinline", "");   // attribute (belt & suspenders)
+  vid.setAttribute("webkit-playsinline", "");
+  vid.controls = false;
+
   const SHOW_MS = 6000;
   const STAGE1  = 700;
   let started = false;
