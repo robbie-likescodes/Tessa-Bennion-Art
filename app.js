@@ -419,6 +419,16 @@ function gateScrollToArt() {
   document.addEventListener("touchcancel", reset, { passive: true });
 }
 
+/* --------- Briefly exaggerate the fan while scrolling (CSS hook) --------- */
+function hintStacksWhileScrolling(){
+  let t;
+  window.addEventListener('scroll', () => {
+    document.body.classList.add('stack-peek');
+    clearTimeout(t);
+    t = setTimeout(() => document.body.classList.remove('stack-peek'), 350);
+  }, { passive: true });
+}
+
 /* --------------------------- Boot ------------------------------ */
 function boot() {
   renderGroupedRows("rows-life",        FILES.life);
@@ -433,6 +443,7 @@ function boot() {
   introFlow();
   profileLink();
   gateScrollToArt();
+  hintStacksWhileScrolling();   // <— NEW: flare the stack corners during scroll
 }
 
 document.addEventListener("DOMContentLoaded", boot);
