@@ -105,15 +105,15 @@ function makeVideoCard(src) {
   v.playsInline = true;
   v.muted = true;
   v.preload = "metadata";
-  v.controls = false;                 // hide chrome while just previewing
-  v.setAttribute("disablepictureinpicture", ""); // cleaner UI on iOS
+  v.controls = false;                 // preview mode (no big play overlay)
+  v.setAttribute("disablepictureinpicture", "");
 
-  // Show a frame so it looks like a thumbnail (no giant play overlay)
+  // show an early frame so it looks like a thumbnail
   v.addEventListener("loadedmetadata", () => {
     try { v.currentTime = Math.min(0.1, v.duration || 0.1); } catch {}
   }, { once: true });
 
-  // On tap, enable controls and play
+  // on tap: enable controls and play
   v.addEventListener("click", () => {
     if (!v.controls) v.controls = true;
     v.play().catch(()=>{});
@@ -228,10 +228,8 @@ function renderGroupedRows(mountId, fileList) {
     const anyVid  = files.some(isVideo);
 
     if (allImgs && files.length >= 1) {
-      // iMessage-style stack: X1 on top; X2/X3… inside
-      wrapper.appendChild(makeFlipStackCard(files));
+      wrapper.appendChild(makeFlipStackCard(files)); // iMessage-like stack
     } else if (anyVid) {
-      // Video collections → small horizontal row
       const row = document.createElement("div");
       row.className = "row";
       files.forEach(f => {
@@ -351,7 +349,11 @@ function introFlow() {
   const STAGE1  = 700;
   let started = false;
 
-  const snapTop = () => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); };
+  // Safe on iOS/desktop
+  const snapTop = () => {
+    try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }
+    catch { window.scrollTo(0, 0); }
+  };
 
   const startFade = () => {
     snapTop();
@@ -387,9 +389,14 @@ function profileLink(){
   const about = document.querySelector("#about");
   if (!prof || !about) return;
   prof.style.cursor = "pointer";
-  on(prof, "click", () => about.scrollIntoView({ behavior: "smooth", block: "
+  on(prof, "click", () =>
+    about.scrollIntoView({ behavior: "smooth", block: "start" })
+  );
+}
 
-     function gateScrollToArt() {
+/* --------- Global scroll gating: only scroll when touch starts on art --------- */
+/* We rely on native scrolling and only cancel touchmoves that start OFF art. */
+function gateScrollToArt() {
   // art selectors (images, videos, stacks, etc.)
   const ART_SELECTOR = `
     .card img, .card video,
@@ -405,11 +412,7 @@ function profileLink(){
   let allowScroll = false;
 
   document.addEventListener("touchstart", (e) => {
-    if (e.target.closest(ART_SELECTOR) || e.target.closest(FREE_SELECTOR)) {
-      allowScroll = true;
-    } else {
-      allowScroll = false;
-    }
+    allowScroll = !!(e.target.closest(ART_SELECTOR) || e.target.closest(FREE_SELECTOR));
   }, { passive: true });
 
   document.addEventListener("touchmove", (e) => {
@@ -445,7 +448,7 @@ function boot() {
   introFlow();
   profileLink();
   gateScrollToArt();
-  hintStacksWhileScrolling();   // <— NEW: flare the stack corners during scroll
+  hintStacksWhileScrolling();
 }
 
 document.addEventListener("DOMContentLoaded", boot);
