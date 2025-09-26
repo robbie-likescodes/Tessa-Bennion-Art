@@ -1,371 +1,429 @@
 /* =========================================================
-   Tessa Bennion Art — styles.css
-   Mobile-first, academic painter portfolio
+   Tessa Bennion — app.js (intro 6s hold → two-stage fade, menu autoclose, profile→about)
 ========================================================= */
 
-/* ---------------- Tokens ---------------- */
-:root {
-  --bg: #faf9f7;
-  --fg: #1c1c1c;
-  --muted: #6b6b6b;
-  --accent: #7b3f00; /* warm umber accent */
-  --maxw: 1100px;
-  --pad: clamp(0.75rem, 2vw, 1.25rem);
+/* ------------ List your files (exact names) ------------ */
+const FILES = {
+  life: [
+    "LifeA1.jpeg", "LifeA2.jpeg",
+    "LifeB1.jpeg", "LifeB2.jpeg", "LifeB3.jpeg",
+    "LifeC1.jpeg", "LifeC2.jpeg"
+  ],
+  portrait: [
+    "PortraitA1.JPEG",
+    "PortaitB1.jpeg", "PortrainB2.jpeg", "PortraitB3.PNG",
+    "PortraitC1.jpeg", "PortraitD1.jpeg", "PortraitE1.jpeg",
+    "PortraitF1.jpeg", "PortraitG1.jpeg", "PortraitH1.jpeg"
+  ],
+  still: [
+    "StillA1.jpeg", "StillA2.JPG", "StillA3.JPEG", "StillA4.jpeg",
+    "StillB1.jpeg"
+  ],
+  exhibitions: [
+    "VidA2.mp4", "VidA3.mp4"
+  ],
+  sketches: [
+    "SketchA1.jpeg","SketchB1.jpeg","SketchC1.jpeg","SketchD1.jpeg","SketchE1.jpeg"
+  ]
+};
 
-  --font-sans: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  --font-serif: "EB Garamond", Georgia, serif;
-  --font-script: "Great Vibes", cursive;
-}
+const BASE = "uploads/";
 
-/* Make any [hidden] truly hidden (fixes menu lingering) */
-[hidden] { display: none !important; }
+/* --------------------------- Helpers --------------------------- */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const on = (el, ev, fn, opt) => el && el.addEventListener(ev, fn, opt);
 
-/* ---------------- Reset ---------------- */
-*,
-*::before,
-*::after { box-sizing: border-box; }
+function ext(name){ return (name.split(".").pop() || "").toLowerCase(); }
+function isVideo(name){ return ext(name) === "mp4"; }
+function isImage(name){ return /jpe?g|png|webp|gif|bmp|tiff?/i.test(ext(name)); }
+function baseName(name){ return name.replace(/\.[a-z0-9]+$/i, ""); }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-serif);
-  background: var(--bg);
-  color: var(--fg);
-  overflow-x: hidden; /* never allow sideways pan */
+/* Series & collection keys */
+function seriesKey(name){
+  const b = baseName(name);
+  const m = b.match(/^([A-Za-z]+[A-Z])[0-9]+$/);
+  return m ? m[1] : b;
 }
-
-img, video {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* ---------------- Intro (two-stage fade) ---------------- */
-.intro{
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: grid;
-  place-items: center;
-  background: #000;
-  opacity: 1;
-  transition: opacity .6s ease;
-  overflow: hidden;
-}
-.intro-video{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 1;
-}
-/* Stage 1: fade the moving video to black */
-.intro.fade-video .intro-video{
-  opacity: 0;
-  transition: opacity .7s ease;
-}
-/* Stage 2: fade the overlay itself away */
-.intro.fade-overlay{
-  opacity: 0;
-  pointer-events: none;
-}
-.intro-overlay{
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-}
-.brand-script{
-  font-family: var(--font-script);
-  font-size: clamp(2rem, 6vw, 4rem);
-  color: #fff;
-  text-shadow: 0 2px 6px rgba(0,0,0,.6);
-}
-.skip-intro{
-  position: absolute;
-  right: 1rem;
-  bottom: 1rem;
-  background: rgba(0,0,0,.6);
-  color: #fff;
-  border: none;
-  padding: .5rem .9rem;
-  border-radius: .4rem;
-  font-size: .9rem;
+function collectionKey(name){
+  const b = baseName(name);
+  const m = b.match(/^([A-Za-z]+[A-Z])/);
+  return m ? m[1] : seriesKey(name);
 }
 
-/* ---------------- Header ---------------- */
-.site-header{
-  position: sticky;
-  top: 0;
-  z-index: 900;
-  display: grid;
-  grid-template-columns: 1fr auto auto; /* menu wide, palette (injected), profile */
-  align-items: center;
-  padding: .5rem var(--pad);
-  background: rgba(250,249,247,.9);
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(0,0,0,.08);
+/* Group by collection (A/B/C…), then sort numerically inside */
+function groupIntoCollections(fileList){
+  const map = new Map();
+  for(const f of fileList){
+    const key = collectionKey(f);
+    if(!map.has(key)) map.set(key, []);
+    map.get(key).push(f);
+  }
+  map.forEach(arr => arr.sort((a,b) => {
+    const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
+    const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
+    return na - nb;
+  }));
+  const entries = [...map.entries()];
+  entries.sort((a,b) => {
+    const la = a[0].slice(-1), lb = b[0].slice(-1);
+    if (la !== lb) return la.localeCompare(lb);
+    return a[0].localeCompare(b[0]);
+  });
+  return entries;
 }
 
-#menuTrigger,
-.menu-trigger{
-  width: 100%;
-  background: none;
-  border: none;
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
-  padding: .6rem;
-  text-align: center;
-  cursor: pointer;
+/* ---------------------- Card factories ---------------------- */
+function humanizeFilename(file) {
+  const name = baseName(file);
+  return name.replace(/[-_]+/g, " ").replace(/([a-z])([0-9])/gi, "$1 $2");
 }
 
-.profile{
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-left: .75rem;
-  cursor: pointer; /* tappable → About */
+function makeImageCard(src, caption = "") {
+  const fig = document.createElement("figure");
+  fig.className = "card";
+  const a = document.createElement("a");
+  a.href = BASE + src;
+  a.className = "lb";
+  a.setAttribute("aria-label", "Open image");
+  const img = document.createElement("img");
+  img.loading = "lazy";
+  img.decoding = "async";
+  img.src = BASE + src;
+  img.alt = caption || humanizeFilename(src);
+  a.appendChild(img);
+  fig.appendChild(a);
+  return fig;
 }
 
-/* Optional mount where the painter palette can dock */
-#ap-palette-mount { display: inline-flex; margin-left: .5rem; }
+function makeVideoCard(src) {
+  const fig = document.createElement("figure");
+  fig.className = "card";
 
-/* Dropdown */
-#menuDropdown,
-.menu-dropdown{
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: var(--bg);
-  border-bottom: 1px solid rgba(0,0,0,.08);
-  display: flex;
-  flex-direction: column;
-}
+  const v = document.createElement("video");
+  v.src = BASE + src;
+  v.playsInline = true;
+  v.muted = true;
+  v.preload = "metadata";
+  v.controls = false;                 // hide chrome while just previewing
+  v.setAttribute("disablepictureinpicture", ""); // cleaner UI on iOS
 
-.menu-link{
-  padding: 1rem;
-  text-align: center;
-  text-decoration: none;
-  color: var(--fg);
-  border-top: 1px solid rgba(0,0,0,.05);
-}
-.menu-link:hover,
-.menu-link:focus-visible{
-  background: rgba(0,0,0,.05);
-}
+  // Show a frame so it looks like a thumbnail (no giant play overlay)
+  v.addEventListener("loadedmetadata", () => {
+    try { v.currentTime = Math.min(0.1, v.duration || 0.1); } catch {}
+  }, { once: true });
 
-#menuOverlay,
-.menu-overlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.2);
-  backdrop-filter: blur(2px);
+  // On tap, enable controls and play
+  v.addEventListener("click", () => {
+    if (!v.controls) v.controls = true;
+    v.play().catch(()=>{});
+  });
+
+  fig.appendChild(v);
+  return fig;
 }
 
-/* ---------------- Sections ---------------- */
-.section{
-  padding: 2rem var(--pad);
-  max-width: var(--maxw);
-  margin: 0 auto; /* center the main feed */
-}
-.section-title{
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
-  margin: 0 0 .75rem;
+/* ---------- Flip Stack (shows X1 on top; X2/X3… revealed) ---------- */
+function makeFlipStackCard(files) {
+  const ordered = [...files].sort((a,b)=>{
+    const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
+    const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
+    return na - nb;
+  });
+
+  const wrap = document.createElement("div");
+  wrap.className = "flipstack";
+
+  const layers = ordered.map((f,i)=>{
+    const item = document.createElement("div");
+    item.className = "flipstack__item";
+    item.dataset.pos = i===0 ? "0" : i===1 ? "1" : i===2 ? "2" : "rest";
+    const img = document.createElement("img");
+    img.loading="lazy"; img.decoding="async";
+    img.src = BASE + f; img.alt = humanizeFilename(f);
+    item.appendChild(img);
+    wrap.appendChild(item);
+    return item;
+  });
+
+  const badge = document.createElement("div");
+  badge.className = "flipstack__badge";
+  badge.textContent = `1/${ordered.length}`;
+  wrap.appendChild(badge);
+
+  let head = 0;
+  const apply = ()=>{
+    layers.forEach((el,i)=>{
+      const rel = (i - head + ordered.length) % ordered.length;
+      el.dataset.pos = rel===0 ? "0" : rel===1 ? "1" : rel===2 ? "2" : "rest";
+      if (rel===0) {
+        el.onclick = () => openLightbox(BASE+ordered[head], humanizeFilename(ordered[head]));
+      } else {
+        el.onclick = null;
+      }
+    });
+    badge.textContent = `${head+1}/${ordered.length}`;
+  };
+  apply();
+
+  // tap to advance
+  wrap.addEventListener("click", ()=>{
+    head = (head + 1) % ordered.length;
+    apply();
+  });
+
+  // horizontal swipe to flip (phone-friendly)
+  const drag = {down:false, x:0, y:0};
+  wrap.addEventListener("pointerdown", e=>{
+    drag.down = true; drag.x = e.clientX; drag.y = e.clientY;
+    wrap.setPointerCapture?.(e.pointerId);
+  });
+  wrap.addEventListener("pointermove", e=>{
+    if(!drag.down) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 14) {
+      e.preventDefault(); // stop page scroll while flipping
+      layers[head].style.transform = `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
+    }
+  }, {passive:false});
+  wrap.addEventListener("pointerup", e=>{
+    if(!drag.down) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    layers[head].style.transform = ""; // restore
+    drag.down = false;
+    wrap.releasePointerCapture?.(e.pointerId);
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+      head = (head + (dx < 0 ? 1 : ordered.length - 1)) % ordered.length;
+      apply();
+      e.preventDefault();
+    }
+  });
+
+  return wrap;
 }
 
-/* ---------------- Vertical stacks (A, B, C…) ---------------- */
-.stacks{
-  display: grid;
-  grid-auto-flow: row;      /* force vertical order */
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-.stack-row{
-  width: 100%;
-  display: grid;
-  place-items: center;      /* center each stack */
+/* -------------------------- Render (VERTICAL stacks) --------------------------- */
+function renderGroupedRows(mountId, fileList) {
+  const mount = document.getElementById(mountId);
+  if (!mount) return;
+
+  // Vertical list of collections
+  mount.classList.add("stacks");
+
+  const collections = groupIntoCollections(fileList);
+  if (!collections.length) {
+    const empty = document.getElementById(mountId.replace("rows-", "") + "-empty");
+    if (empty) empty.hidden = false;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+
+  collections.forEach(([key, files]) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "stack-row";
+
+    const allImgs = files.every(isImage);
+    const anyVid  = files.some(isVideo);
+
+    if (allImgs && files.length >= 1) {
+      wrapper.appendChild(makeFlipStackCard(files)); // iMessage-like stack
+    } else if (anyVid) {
+      const row = document.createElement("div");
+      row.className = "row";
+      files.forEach(f => {
+        if (isVideo(f)) row.appendChild(makeVideoCard(f));
+        else row.appendChild(makeImageCard(f));
+      });
+      wrapper.appendChild(row);
+    } else {
+      wrapper.appendChild(makeImageCard(files[0]));
+    }
+
+    frag.appendChild(wrapper);
+  });
+
+  mount.appendChild(frag);
 }
 
-/* If a mount still has the old 'rows' class, force vertical behavior */
-.rows.stacks{
-  overflow: visible !important;
-  scroll-snap-type: none !important;
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 1rem !important;
+/* --------------------------- Lightbox -------------------------- */
+const LB = { el: null, img: null, cap: null };
+function wireLightbox() {
+  LB.el  = $("#lightbox");
+  LB.img = $("#lb-img");
+  LB.cap = $("#lb-cap");
+
+  $$(".lb").forEach(a =>
+    on(a, "click", e => {
+      e.preventDefault();
+      const img = $("img", a);
+      LB.img.src = a.href;
+      LB.img.alt = img?.alt || "";
+      LB.cap.textContent = img?.alt || "";
+      LB.el.hidden = false;
+    })
+  );
+
+  on($(".lb-close"), "click", () => (LB.el.hidden = true));
+  on(LB.el, "click", (e) => { if (e.target === LB.el) LB.el.hidden = true; });
+  on(document, "keydown", (e) => { if (e.key === "Escape") LB.el.hidden = true; });
 }
 
-/* ---------------- Horizontal rows (used inside some stacks, e.g. videos) ---------------- */
-.rows{
-  display: flex;
-  gap: 1rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding-bottom: .5rem;
-  -webkit-overflow-scrolling: touch;
-}
-.rows::-webkit-scrollbar{ display: none; }
+/* ---------------------- Smooth section nav --------------------- */
+function smoothNav() {
+  const dockLinks   = $$(".bottom-dock a");
+  const menuLinks   = $$(".menu-dropdown a");
+  const allLinks    = [...dockLinks, ...menuLinks];
 
-.row{
-  display: flex;
-  gap: 1rem;
-  scroll-snap-align: start;
-}
+  allLinks.forEach(a =>
+    on(a, "click", (e) => {
+      const href = a.getAttribute("href") || "";
+      if (!href.startsWith("#")) return;
+      const target = document.querySelector(href);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.replaceState(null, "", href);
+    })
+  );
 
-/* ---------------- Cards ---------------- */
-.card{
-  flex: 0 0 auto;
-  width: min(80vw, 320px);
-  scroll-snap-align: start;
-  position: relative;
-}
-.card img,
-.card video{
-  width: 100%;
-  border-radius: .5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,.15);
-  object-fit: cover;
-}
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const id = "#" + entry.target.id;
+      allLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === id));
+      $$(".bottom-dock a").forEach(link =>
+        link.classList.toggle("active-chip", link.getAttribute("href") === id)
+      );
+    });
+  }, { threshold: 0.2 });
 
-/* Keep video cards consistent */
-.card video{
-  aspect-ratio: 16/9; /* adjust if you prefer 4/5 portrait */
-  border: 0;
+  $$("section[id]").forEach(sec => io.observe(sec));
 }
 
-.card figcaption{
-  font-size: .85rem;
-  color: var(--muted);
-  margin-top: .3rem;
+/* ----------------------- Menu dropdown UX ---------------------- */
+function menuControls(){
+  const btn   = document.getElementById('menuTrigger');
+  const drop  = document.getElementById('menuDropdown');
+  const veil  = document.getElementById('menuOverlay');
+  if (!btn || !drop || !veil) return;
+
+  const open  = () => { btn.setAttribute('aria-expanded','true');  drop.hidden = false; veil.hidden = false; };
+  const close = () => { btn.setAttribute('aria-expanded','false'); drop.hidden = true;  veil.hidden = true;  };
+  const toggle = () => (btn.getAttribute('aria-expanded') === 'true' ? close() : open());
+
+  // Force closed on load
+  close();
+
+  btn.addEventListener('click', (e)=>{ e.stopPropagation(); toggle(); });
+  veil.addEventListener('click', close);
+
+  // Close on outside clicks
+  document.addEventListener('click', (e)=>{
+    if (drop.hidden) return;
+    const inside = drop.contains(e.target) || btn.contains(e.target);
+    if (!inside) close();
+  });
+
+  // Auto-close on scroll/resize/hashchange
+  window.addEventListener('scroll', close, { passive: true });
+  window.addEventListener('resize', close);
+  window.addEventListener('hashchange', close);
+
+  // Close when picking a link
+  drop.querySelectorAll('a').forEach(a=> a.addEventListener('click', close));
 }
 
-/* ---------------- Flip Stack (iMessage vibe) ---------------- */
-.flipstack{
-  width: min(92vw, 560px);
-  aspect-ratio: 4 / 5;
-  margin: 0 auto;
-  border-radius: 16px;
-  position: relative;
-  overflow: hidden;
-  perspective: 900px;
-  touch-action: none; /* JS handles horizontal gestures; prevents page tug */
-}
-.flipstack__item{
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  box-shadow: 0 16px 30px rgba(0,0,0,.18);
-  transform-origin: 50% 70%;
-  transition: transform .28s ease, opacity .28s ease, filter .28s ease;
-  will-change: transform, opacity;
-}
-.flipstack__item img{
-  width: 100%; height: 100%; object-fit: cover; border-radius: 16px;
+/* ------------------------- Intro video ------------------------- */
+/* Show ~6s then two-stage fade: video→black, then overlay fades away.
+   Always snap back to top when the intro ends or is skipped. */
+function introFlow() {
+  const intro = $("#intro");
+  const vid   = $("#introVideo");
+  const skip  = $("#skipIntro");
+  if (!intro || !vid) return;
+
+  const SHOW_MS = 6000;
+  const STAGE1  = 700;
+  let started = false;
+
+  const snapTop = () => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); };
+
+  const startFade = () => {
+    snapTop();
+    intro.classList.add("fade-video");
+    setTimeout(() => {
+      intro.classList.add("fade-overlay");
+      intro.addEventListener("transitionend", () => {
+        try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {}
+        snapTop();
+        intro.remove();
+      }, { once:true });
+    }, STAGE1 + 50);
+  };
+
+  const scheduleStartFade = () => {
+    if (started) return;
+    started = true;
+    setTimeout(startFade, SHOW_MS);
+  };
+
+  const tryPlay = () => vid.play().catch(()=>{});
+  if (vid.readyState >= 2) tryPlay();
+  else vid.addEventListener("canplay", tryPlay, { once:true });
+
+  vid.addEventListener("playing", scheduleStartFade, { once:true });
+  vid.addEventListener("ended", startFade, { once:true });
+  skip?.addEventListener("click", startFade);
 }
 
-/* positions to fan cards like iMessage */
-.flipstack__item[data-pos="0"]{ z-index:3; opacity:1;   transform: rotate(0) translateZ(0); filter:none; }
-.flipstack__item[data-pos="1"]{ z-index:2; opacity:.92; transform: rotate(-5deg) scale(.985) translateY(5px) translateX(-2px); filter:saturate(.95) brightness(.99); }
-.flipstack__item[data-pos="2"]{ z-index:1; opacity:.85; transform: rotate(5deg)  scale(.97)  translateY(9px) translateX( 2px); filter:saturate(.9)  brightness(.97); }
-.flipstack__item[data-pos="rest"]{ z-index:0; opacity:0;  transform: scale(.95) translateY(14px); }
-
-.flipstack__badge{
-  position: absolute;
-  right: 8px; top: 8px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.55);
-  color: #fff;
-  font: 600 .8rem/1 var(--font-sans);
-  backdrop-filter: blur(2px);
-  pointer-events: none;
+/* ---------------- Profile → About link ---------------- */
+function profileLink(){
+  const prof = document.querySelector(".profile");
+  const about = document.querySelector("#about");
+  if (!prof || !about) return;
+  prof.style.cursor = "pointer";
+  on(prof, "click", () => about.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
-/* ---------------- About ---------------- */
-.about-hero img{
-  max-width: 280px;
-  border-radius: 50%;
-  margin: 0 auto 1rem;
-}
-.about-copy{
-  font-size: 1.05rem;
-  line-height: 1.5;
-  max-width: 42rem;
-  margin: 0 auto;
-  text-align: center;
+/* --------- Global scroll gating: only scroll when touch starts on art --------- */
+function gateScrollToArt() {
+  let allowScroll = false;
+  const ART_SELECTOR = ".card img, .card video, .flipstack";
+
+  // Touch start decides whether this gesture may scroll
+  document.addEventListener("touchstart", (e) => {
+    allowScroll = !!e.target.closest(ART_SELECTOR);
+  }, { passive: true });
+
+  // If gesture didn't start on art, block vertical scroll
+  document.addEventListener("touchmove", (e) => {
+    if (!allowScroll) e.preventDefault();
+  }, { passive: false });
 }
 
-/* ---------------- Contact ---------------- */
-#contact p{
-  font-size: 1.05rem;
-  text-align: center;
-}
-#contact a{
-  color: var(--accent);
-  text-decoration: underline;
+/* --------------------------- Boot ------------------------------ */
+function boot() {
+  renderGroupedRows("rows-life",        FILES.life);
+  renderGroupedRows("rows-portrait",    FILES.portrait);
+  renderGroupedRows("rows-still",       FILES.still);
+  renderGroupedRows("rows-exhibitions", FILES.exhibitions);
+  renderGroupedRows("rows-sketches",    FILES.sketches);
+
+  wireLightbox();
+  smoothNav();
+  menuControls();
+  introFlow();
+  profileLink();
+  gateScrollToArt();
 }
 
-/* ---------------- Bottom Dock ---------------- */
-.bottom-dock{
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: rgba(250,249,247,.95);
-  display: flex;
-  justify-content: space-around;
-  padding: .5rem 0;
-  border-top: 1px solid rgba(0,0,0,.08);
-  backdrop-filter: blur(6px);
-  z-index: 25;
-}
-.bottom-dock a{
-  font-size: .9rem;
-  color: var(--fg);
-  text-decoration: none;
-}
-.bottom-dock a.active{
-  color: var(--accent);
-  font-weight: 600;
-}
+document.addEventListener("DOMContentLoaded", boot);
 
-/* ---------------- Lightbox ---------------- */
-.lightbox{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.88);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1001;
+/* ------------- Lightbox opener used by Flip Stack --------------- */
+function openLightbox(src, caption){
+  const lb = $("#lightbox"); if(!lb) return;
+  $("#lb-img").src = src;
+  $("#lb-cap").textContent = caption || "";
+  lb.hidden = false;
 }
-.lb-close{
-  position: absolute;
-  top: 1rem; right: 1rem;
-  background: none; border: none;
-  color: #fff; font-size: 2rem;
-}
-#lb-img{
-  max-width: 90%;
-  max-height: 80%;
-  border-radius: .5rem;
-}
-.lb-cap{
-  margin-top: .5rem;
-  font-size: 1rem;
-  color: #ddd;
-}
-
-/* ---------------- Utility ---------------- */
-.muted{ color: var(--muted); }
-.small{ font-size: .85rem; }
-
-/* Focus outlines for accessibility */
-:focus-visible{
-  outline: 2px solid rgba(0,0,0,.35);
-  outline-offset: 3px;
-}
-
