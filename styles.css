@@ -115,6 +115,161 @@ img, video{
   pointer-events:none;
 }
 
+/* ==================================================================== */
+/* NEW — Modern App Bar + Two-line Hamburger + Side Drawer              */
+/* ==================================================================== */
+
+/* App bar */
+.app-bar{
+  position:sticky;
+  top:0;
+  z-index:920;
+  display:grid;
+  grid-template-columns:auto 1fr auto;  /* avatar | title | burger */
+  align-items:center;
+  gap:.75rem;
+  padding:.5rem var(--pad);
+  background:rgba(250,249,247,.9);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid rgba(0,0,0,.08);
+}
+
+/* Left: avatar button (navigates to About) */
+.avatar-btn{
+  display:inline-grid;
+  place-items:center;
+  background:none;
+  border:0;
+  padding:.125rem;
+  cursor:pointer;
+}
+.app-bar .profile{
+  width:40px; height:40px;
+  border-radius:50%;
+  object-fit:cover;
+}
+
+/* Center: title */
+.brand-title{
+  margin:0;
+  font:600 1.15rem/1.1 var(--font-serif);
+  text-align:center;
+  letter-spacing:.02em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Right: two-line hamburger */
+.burger{
+  --line-w: 22px;
+  --line-h: 2px;
+  --gap: 6px;
+
+  position:relative;
+  width:calc(var(--line-w));
+  height:calc(var(--line-h)*2 + var(--gap));
+  display:inline-grid;
+  align-content:center;
+  gap:var(--gap);
+  background:none;
+  border:0;
+  padding:0;
+  cursor:pointer;
+}
+.burger__line{
+  display:block;
+  width:var(--line-w);
+  height:var(--line-h);
+  background:#000;
+  border-radius:2px;
+  transition:transform .28s ease, opacity .28s ease, background-color .28s ease;
+  transform-origin:50% 50%;
+}
+
+/* Rotate to an X when open (using aria-expanded) */
+.burger[aria-expanded="true"] .burger__line:first-child{
+  transform:translateY(calc(var(--gap)/2 + var(--line-h)/2)) rotate(45deg);
+}
+.burger[aria-expanded="true"] .burger__line:last-child{
+  transform:translateY(calc(-1 * (var(--gap)/2 + var(--line-h)/2))) rotate(-45deg);
+}
+
+/* Drawer + overlay */
+.side-drawer{
+  position:fixed;
+  top:0; right:0;
+  width:min(88vw, 340px);
+  height:100dvh;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(10px);
+  border-left:1px solid rgba(0,0,0,.08);
+  z-index:915;
+  transform:translateX(100%);
+  transition:transform .28s ease;
+}
+.side-drawer:not([hidden]){ transform:translateX(0); }
+
+.drawer-overlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.28);
+  backdrop-filter:blur(2px);
+  z-index:910;
+}
+
+/* Drawer content */
+.drawer-inner{
+  display:flex;
+  flex-direction:column;
+  height:100%;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) var(--pad) var(--pad);
+}
+
+.drawer-links{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+.drawer-links li{ margin:0; }
+.drawer-links li.sep{
+  height:1px;
+  margin:.5rem 0;
+  background:rgba(0,0,0,.08);
+}
+.drawer-links a{
+  display:block;
+  padding:1rem .25rem;
+  text-decoration:none;
+  color:var(--fg);
+  font-size:1.15rem;
+  text-align:left;
+  border-bottom:1px solid rgba(0,0,0,.05);
+}
+.drawer-links a:hover,
+.drawer-links a:focus-visible{
+  background:rgba(0,0,0,.05);
+}
+
+/* Drawer footer (social) */
+.drawer-social{
+  margin-top:auto;
+  padding-top:.75rem;
+}
+.drawer-social a{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  text-decoration:none;
+  color:var(--fg);
+  font-family:var(--font-sans, sans-serif);
+  font-size:.95rem;
+}
+.drawer-social a:hover{ text-decoration:underline; }
+
+/* ==================================================================== */
+/* Legacy header/menu styles (kept for compatibility with old markup)   */
+/* ==================================================================== */
+
 /* ---------------- Header ---------------- */
 /* Use flex + absolute centering so "Menu" is perfectly centered on the page
    regardless of right-side icons. */
@@ -282,7 +437,6 @@ img, video{
   position:relative;
   overflow:hidden;
   perspective:900px;
-  /* allow pan-y so vertical scroll works when starting on the stack. */
 
   /* Stronger fan variables */
   --peek-x: 14px;   /* horizontal corner peek */
