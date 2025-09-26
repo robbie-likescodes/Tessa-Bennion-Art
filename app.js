@@ -149,22 +149,20 @@ function makeFlipStackCard(files) {
     return item;
   });
 
-  // classy pager dots (replaces numeric badge)
-  const pager = document.createElement("div");
-  pager.className = "flipstack__pager";
-  const dots = ordered.map((_, i) => {
-    const d = document.createElement("span");
-    d.className = "flipstack__dot" + (i === 0 ? " is-active" : "");
-    pager.appendChild(d);
-    return d;
-  });
-  wrap.appendChild(pager);
-
-  // (Keep old badge in DOM only if CSS still references it; otherwise omit)
-  // const badge = document.createElement("div");
-  // badge.className = "flipstack__badge";
-  // badge.textContent = `1/${ordered.length}`;
-  // wrap.appendChild(badge);
+  // classy pager dots (instead of numeric badge)
+  let dots = [];
+  let dotsWrap = null;
+  if (ordered.length > 1) {
+    dotsWrap = document.createElement("div");
+    dotsWrap.className = "flipstack__dots";
+    dots = ordered.map((_, i) => {
+      const d = document.createElement("span");
+      d.className = "flipstack__dot" + (i === 0 ? " is-active" : "");
+      dotsWrap.appendChild(d);
+      return d;
+    });
+    wrap.appendChild(dotsWrap);
+  }
 
   let head = 0;
 
@@ -182,14 +180,13 @@ function makeFlipStackCard(files) {
         el.onclick = null;
       }
     });
-    setActiveDot(head);
-    // if you kept the numeric badge:
-    // badge.textContent = `${head+1}/${ordered.length}`;
+    if (dots.length) setActiveDot(head);
   };
   apply();
 
-  // tap to advance
-  wrap.addEventListener("click", ()=>{
+  // tap to advance (ignore taps on dots)
+  wrap.addEventListener("click", (e)=>{
+    if (dotsWrap && dotsWrap.contains(e.target)) return;
     head = (head + 1) % ordered.length;
     apply();
   });
