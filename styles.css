@@ -408,6 +408,7 @@ body.stack-peek .flipstack__item[data-pos="2"]{
 /* ---------------- Contact ---------------- */
 #contact p{ font-size:1.05rem; text-align:center; }
 #contact a{ color:var(--accent); text-decoration:underline; }
+#contact { margin-bottom: 3rem; }
 
 /* Instagram row */
 .social-links{
