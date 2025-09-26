@@ -271,8 +271,6 @@ img, video{
 /* ==================================================================== */
 
 /* ---------------- Header ---------------- */
-/* Use flex + absolute centering so "Menu" is perfectly centered on the page
-   regardless of right-side icons. */
 .site-header{
   position:sticky;
   top:0;
@@ -329,7 +327,7 @@ img, video{
   text-decoration:none;
   color:var(--fg);
   border-top:1px solid rgba(0,0,0,.05);
-  font-size:1.15rem;                   /* larger menu items */
+  font-size:1.15rem;
 }
 .menu-link:hover,
 .menu-link:focus-visible{ background:rgba(0,0,0,.05); }
@@ -346,26 +344,26 @@ img, video{
 .section{
   padding:2rem var(--pad);
   max-width:var(--maxw);
-  margin:0 auto;                       /* center the main feed */
+  margin:0 auto;
 }
 .section-title{
   font-family:var(--font-serif);
   font-size:1.5rem;
   margin:0 0 .75rem;
-  text-align:center;                   /* centered section titles */
+  text-align:center;
 }
 
 /* ---------------- Vertical stacks (A, B, C…) ---------------- */
 .stacks{
   display:grid;
-  grid-auto-flow:row;                  /* vertical order */
+  grid-auto-flow:row;
   grid-template-columns:1fr;
   gap:1.25rem;
 }
 .stack-row{
   width:100%;
   display:grid;
-  place-items:center;                  /* center each stack */
+  place-items:center;
 }
 
 /* If a mount still has the old 'rows' class, force vertical behavior */
@@ -377,7 +375,7 @@ img, video{
   gap:1rem !important;
 }
 
-/* ---------------- Horizontal rows (used inside some stacks, e.g. videos) ---------------- */
+/* ---------------- Horizontal rows ---------------- */
 .rows{
   display:flex;
   gap:1rem;
@@ -412,12 +410,12 @@ img, video{
 /* Allow vertical scroll when gesture starts on art */
 .card, .card a, .card a.lb, .card img, .card video,
 .flipstack, .flipstack__item, .flipstack__item img{
-  touch-action: pan-y; /* UA handles vertical scroll; JS only takes horizontal flip */
+  touch-action: pan-y;
 }
 
 /* Keep video cards consistent */
 .card video{
-  aspect-ratio:16/9;                    /* adjust if you prefer 4/5 portrait */
+  aspect-ratio:16/9;
   border:0;
   background:#000;
 }
@@ -428,7 +426,7 @@ img, video{
   margin-top:.3rem;
 }
 
-/* ---------------- Flip Stack (iMessage vibe) ---------------- */
+/* ---------------- Flip Stack ---------------- */
 .flipstack{
   width:min(92vw, 560px);
   aspect-ratio:4/5;
@@ -438,10 +436,9 @@ img, video{
   overflow:hidden;
   perspective:900px;
 
-  /* Stronger fan variables */
-  --peek-x: 14px;   /* horizontal corner peek */
-  --peek-y: 22px;   /* vertical drop */
-  --rot: 10deg;     /* rotation for the two rear cards */
+  --peek-x: 14px;
+  --peek-y: 22px;
+  --rot: 10deg;
 }
 
 .flipstack__item{
@@ -457,7 +454,6 @@ img, video{
   object-fit:cover; border-radius:0;
 }
 
-/* Stronger feathered positions (clearer that it flips) */
 .flipstack__item[data-pos="0"]{
   z-index:3; opacity:1; transform:rotate(0) translateZ(0);
 }
@@ -481,7 +477,7 @@ img, video{
   z-index:0; opacity:0; transform:scale(.95) translateY(18px);
 }
 
-/* Thin light rim so rear cards read as separate layers */
+/* Thin light rim */
 .flipstack__item[data-pos="1"]::before,
 .flipstack__item[data-pos="2"]::before{
   content:"";
@@ -492,7 +488,7 @@ img, video{
   pointer-events:none;
 }
 
-/* Legacy numeric badge (kept, always on top) */
+/* Legacy numeric badge */
 .flipstack__badge{
   position:absolute; right:8px; top:8px;
   padding:4px 8px;
@@ -505,7 +501,7 @@ img, video{
   z-index:999;
 }
 
-/* Dots pagination (classier replacement for badge) */
+/* Dots pagination */
 .flipstack__dots{
   position:absolute;
   left:50%; bottom:8px;
@@ -530,7 +526,7 @@ img, video{
   opacity:1;
 }
 
-/* Exaggerate the fan very briefly while the page is scrolling */
+/* Exaggerate the fan briefly while scrolling */
 body.stack-peek .flipstack__item[data-pos="1"]{
   transform: rotate(calc(var(--rot) * -1.2))
              scale(.96)
@@ -602,6 +598,17 @@ body.stack-peek .flipstack__item[data-pos="2"]{
   color:var(--accent);
   font-weight:600;
 }
+/* NEW: highlight class toggled by JS for the centered section */
+.bottom-dock a.active-chip{
+  color:var(--accent);
+  font-weight:600;
+}
+
+/* Optional: show active state in the drawer list too */
+.drawer-links a.active{
+  color:var(--accent);
+  font-weight:600;
+}
 
 /* ---------------- Lightbox ---------------- */
 .lightbox{
@@ -637,7 +644,7 @@ body.stack-peek .flipstack__item[data-pos="2"]{
 }
 #ap-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-/* While painting, allow normal scrolling (we used to block it) */
+/* While painting, allow normal scrolling */
 .ap-painting-active{ touch-action:auto; }
 
 /* ---------------- Utility ---------------- */
