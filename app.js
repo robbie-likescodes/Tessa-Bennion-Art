@@ -39,10 +39,7 @@ function isVideo(name){ return ext(name) === "mp4"; }
 function isImage(name){ return /jpe?g|png|webp|gif|bmp|tiff?/i.test(ext(name)); }
 function baseName(name){ return name.replace(/\.[a-z0-9]+$/i, ""); }
 
-/* Series & collection keys
-   - PortraitB1 → series "PortraitB", collection "PortraitB"
-   - LifeC2     → series "LifeC",    collection "LifeC"
-*/
+/* Series & collection keys */
 function seriesKey(name){
   const b = baseName(name);
   const m = b.match(/^([A-Za-z]+[A-Z])[0-9]+$/);
@@ -50,11 +47,11 @@ function seriesKey(name){
 }
 function collectionKey(name){
   const b = baseName(name);
-  const m = b.match(/^([A-Za-z]+[A-Z])/);   // e.g., LifeA / PortraitC
+  const m = b.match(/^([A-Za-z]+[A-Z])/);
   return m ? m[1] : seriesKey(name);
 }
 
-/* Group files by collection letter (A/B/C…), sort A→Z, then numerically */
+/* Group by collection (A/B/C…), then sort numerically inside */
 function groupIntoCollections(fileList){
   const map = new Map();
   for(const f of fileList){
@@ -65,15 +62,15 @@ function groupIntoCollections(fileList){
   map.forEach(arr => arr.sort((a,b) => {
     const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
     const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
-    return na - nb; // 1,2,3…
+    return na - nb;
   }));
   const entries = [...map.entries()];
   entries.sort((a,b) => {
-    const la = a[0].slice(-1), lb = b[0].slice(-1); // A/B/C
+    const la = a[0].slice(-1), lb = b[0].slice(-1);
     if (la !== lb) return la.localeCompare(lb);
-    return a[0].localeCompare(b[0]);                // fallback by prefix
+    return a[0].localeCompare(b[0]);
   });
-  return entries; // [ [key, [files…]], ... ]
+  return entries;
 }
 
 /* ---------------------- Card factories ---------------------- */
@@ -102,12 +99,26 @@ function makeImageCard(src, caption = "") {
 function makeVideoCard(src) {
   const fig = document.createElement("figure");
   fig.className = "card";
+
   const v = document.createElement("video");
   v.src = BASE + src;
   v.playsInline = true;
-  v.controls = true;
-  v.preload = "metadata";
   v.muted = true;
+  v.preload = "metadata";
+  v.controls = false;                 // hide chrome while just previewing
+  v.setAttribute("disablepictureinpicture", ""); // cleaner UI on iOS
+
+  // Show a frame so it looks like a thumbnail (no giant play overlay)
+  v.addEventListener("loadedmetadata", () => {
+    try { v.currentTime = Math.min(0.1, v.duration || 0.1); } catch {}
+  }, { once: true });
+
+  // On tap, enable controls and play
+  v.addEventListener("click", () => {
+    if (!v.controls) v.controls = true;
+    v.play().catch(()=>{});
+  });
+
   fig.appendChild(v);
   return fig;
 }
@@ -117,7 +128,7 @@ function makeFlipStackCard(files) {
   const ordered = [...files].sort((a,b)=>{
     const na = parseInt(baseName(a).match(/(\d+)$/)?.[1] || "0", 10);
     const nb = parseInt(baseName(b).match(/(\d+)$/)?.[1] || "0", 10);
-    return na - nb; // 1,2,3…
+    return na - nb;
   });
 
   const wrap = document.createElement("div");
@@ -216,19 +227,16 @@ function renderGroupedRows(mountId, fileList) {
     const anyVid  = files.some(isVideo);
 
     if (allImgs && files.length >= 1) {
-      // iMessage-style stack: X1 on top; X2/X3… inside
-      wrapper.appendChild(makeFlipStackCard(files));
+      wrapper.appendChild(makeFlipStackCard(files)); // iMessage-like stack
     } else if (anyVid) {
-      // For video collections (e.g., exhibitions) → small horizontal row inside
       const row = document.createElement("div");
-      row.className = "row"; // re-use your horizontal styling
+      row.className = "row";
       files.forEach(f => {
         if (isVideo(f)) row.appendChild(makeVideoCard(f));
         else row.appendChild(makeImageCard(f));
       });
       wrapper.appendChild(row);
     } else {
-      // Fallback (single image)
       wrapper.appendChild(makeImageCard(files[0]));
     }
 
@@ -245,7 +253,6 @@ function wireLightbox() {
   LB.img = $("#lb-img");
   LB.cap = $("#lb-cap");
 
-  // Bind click handlers for all .lb links present at load
   $$(".lb").forEach(a =>
     on(a, "click", e => {
       e.preventDefault();
@@ -328,24 +335,29 @@ function menuControls(){
 }
 
 /* ------------------------- Intro video ------------------------- */
-/* Show ~6s then two-stage fade: video→black, then overlay fades away */
+/* Show ~6s then two-stage fade: video→black, then overlay fades away.
+   Always snap back to top when the intro ends or is skipped. */
 function introFlow() {
   const intro = $("#intro");
   const vid   = $("#introVideo");
   const skip  = $("#skipIntro");
   if (!intro || !vid) return;
 
-  const SHOW_MS = 6000;    // show time after playback begins
-  const STAGE1  = 700;     // video fade to black duration (CSS)
+  const SHOW_MS = 6000;
+  const STAGE1  = 700;
   let started = false;
 
+  const snapTop = () => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); };
+
   const startFade = () => {
-    intro.classList.add("fade-video");        // Stage 1: fade the video to black
+    snapTop();
+    intro.classList.add("fade-video");
     setTimeout(() => {
-      intro.classList.add("fade-overlay");    // Stage 2: fade overlay away
+      intro.classList.add("fade-overlay");
       intro.addEventListener("transitionend", () => {
         try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch {}
-        intro.remove();                       // remove from DOM (no lingering veil)
+        snapTop();
+        intro.remove();
       }, { once:true });
     }, STAGE1 + 50);
   };
@@ -374,6 +386,22 @@ function profileLink(){
   on(prof, "click", () => about.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
+/* --------- Global scroll gating: only scroll when touch starts on art --------- */
+function gateScrollToArt() {
+  let allowScroll = false;
+  const ART_SELECTOR = ".card img, .card video, .flipstack";
+
+  // Touch start decides whether this gesture may scroll
+  document.addEventListener("touchstart", (e) => {
+    allowScroll = !!e.target.closest(ART_SELECTOR);
+  }, { passive: true });
+
+  // If gesture didn't start on art, block vertical scroll
+  document.addEventListener("touchmove", (e) => {
+    if (!allowScroll) e.preventDefault();
+  }, { passive: false });
+}
+
 /* --------------------------- Boot ------------------------------ */
 function boot() {
   renderGroupedRows("rows-life",        FILES.life);
@@ -387,6 +415,7 @@ function boot() {
   menuControls();
   introFlow();
   profileLink();
+  gateScrollToArt();
 }
 
 document.addEventListener("DOMContentLoaded", boot);
