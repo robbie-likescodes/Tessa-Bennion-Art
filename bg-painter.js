@@ -1,27 +1,22 @@
 /* =========================================================
-   Academic Painter — bg-painter.js (FADING STROKES)
+   Academic Painter — bg-painter.js (ALWAYS-ON + FADING STROKES)
    - Paint anywhere that's NOT a direct interactive target
    - While painting, page won't scroll (re-enabled when you lift)
-   - Palette tap unlock; top-edge long-press also unlocks
    - Earthy color drift, DPR-aware canvas
-   - NEW: each dab fades out and disappears ~3s after being placed
+   - Each dab fades out and disappears ~3s after being placed
 ========================================================= */
 
 (() => {
   // ---------------- Config ----------------
-  const HOLD_TO_UNLOCK_MS = 700;      // long-press in top margin
-  const HOLD_ON_PALETTE_MS = 600;     // long-press on palette
-  const INACTIVITY_MS     = 6000;     // auto-relock after no input
-  const TOP_UNLOCK_BOUNDS = 80;       // top 80px region
-  const MAX_BRUSH         = 72;
-  const MIN_BRUSH         = 10;
-  const OPACITY           = 0.16;
-  const JITTER_HUE        = 4;
-  const JITTER_VAL        = 0.06;
-  const COLOR_EASE        = 0.06;
+  const MAX_BRUSH   = 72;
+  const MIN_BRUSH   = 10;
+  const OPACITY     = 0.16;
+  const JITTER_HUE  = 4;
+  const JITTER_VAL  = 0.06;
+  const COLOR_EASE  = 0.06;
 
-  // NEW: how long a dab should live before fully disappearing
-  const LIFESPAN_MS       = 3000;
+  // How long a dab should live before fully disappearing
+  const LIFESPAN_MS = 3000;
 
   // Earthy anchors
   const EARTHS = [
@@ -43,12 +38,11 @@
 
   // ---------------- State ----------------
   const state = {
-    unlocked: false,
+    unlocked: true,                  // ← always ON
     painting: false,
     lastPt: null,
     lastT: 0,
     lastSpeed: 0.3,
-    inactivity: null,
     dpr: Math.max(1, Math.min(3, window.devicePixelRatio || 1)),
     colorCur: { ...EARTHS[0] },
     colorTarget: { ...EARTHS[1] },
@@ -59,7 +53,7 @@
   const dabs = []; // each: {x,y, rx, ry, rot, h,s,v, alpha0, birth}
 
   // ---------------- Elements ----------------
-  const els = { canvas: null, ctx: null, palette: null, toast: null };
+  const els = { canvas: null, ctx: null };
 
   // ---------------- Utils ----------------
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
@@ -88,7 +82,9 @@
     v: clamp(c.v + (Math.random()*2-1)*JITTER_VAL, 0, 1)
   });
 
-  const pickNewTarget = () => { state.colorTarget = { ...EARTHS[(Math.random() * EARTHS.length) | 0] }; };
+  const pickNewTarget = () => {
+    state.colorTarget = { ...EARTHS[(Math.random() * EARTHS.length) | 0] };
+  };
 
   function easeColor() {
     let dh = ((state.colorTarget.h - state.colorCur.h + 540) % 360) - 180;
@@ -97,20 +93,9 @@
     state.colorCur.v = lerp(state.colorCur.v, state.colorTarget.v, COLOR_EASE);
   }
 
-  const showToast = (msg = 'Pigment unlocked') => {
-    els.toast.textContent = msg;
-    els.toast.classList.add('show');
-    setTimeout(() => els.toast.classList.remove('show'), 1200);
-  };
-
   const apIsDisallowedTarget = target => {
     try { return !!(target && target.closest(AP_DISALLOW_SELECTOR)); }
     catch { return false; }
-  };
-
-  const kickInactivity = () => {
-    clearTimeout(state.inactivity);
-    state.inactivity = setTimeout(() => relock(), INACTIVITY_MS);
   };
 
   // ---------------- Canvas ----------------
@@ -148,13 +133,14 @@
     state.animRunning = true;
 
     const step = (now) => {
-      // clear whole canvas
       const ctx = els.ctx;
       if (!ctx) { state.animRunning = false; return; }
+
+      // Clear whole canvas each frame
       ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
 
-      // draw all live dabs, drop expired ones
-      const out = [];
+      // Draw all live dabs, drop expired ones
+      const survivors = [];
       for (let i = 0; i < dabs.length; i++) {
         const d = dabs[i];
         const age = now - d.birth;
@@ -162,13 +148,11 @@
 
         const lifeT = 1 - (age / LIFESPAN_MS); // 1 → 0
         drawDab(d, lifeT);
-        out.push(d);
+        survivors.push(d);
       }
-      // keep only survivors
       dabs.length = 0;
-      Array.prototype.push.apply(dabs, out);
+      Array.prototype.push.apply(dabs, survivors);
 
-      // keep going
       requestAnimationFrame(step);
     };
 
@@ -196,68 +180,6 @@
     ctx.restore();
   }
 
-  // ---------------- UI Injection ----------------
-  function injectUI() {
-    // Palette button
-    const btn = document.createElement('button');
-    btn.className = 'ap-palette';
-    btn.type = 'button';
-    btn.setAttribute('aria-label', 'Open pigment palette');
-    btn.innerHTML = `
-      <svg viewBox="0 0 128 96" aria-hidden="true">
-        <defs>
-          <linearGradient id="apWood" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"  stop-color="#caa36f"/>
-            <stop offset="100%" stop-color="#8b673d"/>
-          </linearGradient>
-        </defs>
-        <path d="M94 10c-18-8-44-8-62 2C14 20 6 34 8 48c2 12 12 18 22 18 7 0 10 7 16 11 9 6 24 7 38 2 20-7 34-25 34-40s-12-23-24-29zM40 44a10 10 0 1 1 0-20 10 10 0 0 1 0 20z"
-              fill="url(#apWood)" stroke="rgba(0,0,0,.15)" stroke-width="1"/>
-        <circle cx="58" cy="26" r="6" fill="#b28e4a"/>
-        <circle cx="74" cy="20" r="6" fill="#6c3b2c"/>
-        <circle cx="90" cy="24" r="6" fill="#2B55AE"/>
-        <circle cx="86" cy="38" r="6" fill="#4b1f1f"/>
-        <circle cx="70" cy="36" r="6" fill="#557a4d"/>
-      </svg>
-      <span class="ap-sparkle"></span>
-    `;
-    // Prefer docking inside header mount; fallback to fixed button
-    const mount = document.getElementById('ap-palette-mount');
-    if (mount) {
-      mount.appendChild(btn);
-      btn.style.position = 'static';
-    } else {
-      document.body.appendChild(btn);
-      btn.style.position = 'fixed';
-      btn.style.top = '10px';
-      btn.style.right = '56px';
-      btn.style.zIndex = '901';
-    }
-    els.palette = btn;
-
-    // Toast
-    const toast = document.createElement('div');
-    toast.id = 'ap-toast';
-    toast.setAttribute('role', 'status');
-    toast.setAttribute('aria-live', 'polite');
-    document.body.appendChild(toast);
-    els.toast = toast;
-  }
-
-  // ---------------- Lock / Unlock ----------------
-  function unlock() {
-    if (state.unlocked) return;
-    state.unlocked = true;
-    pickNewTarget();
-    showToast('Pigment unlocked');
-    kickInactivity();
-  }
-
-  function relock() {
-    state.unlocked = false;
-    endPaint();
-  }
-
   // ---------------- Painting Engine ----------------
   function beginPaintFrom(e) {
     ensureCanvas();
@@ -266,8 +188,7 @@
     state.lastPt = getPoint(e);
     state.lastT = performance.now();
     state.lastSpeed = 0.3;
-    kickInactivity();
-    // seed a tiny dab so users see immediate feedback
+    // tiny seed dab for immediate feedback
     dot(state.lastPt.x, state.lastPt.y, 1);
   }
 
@@ -288,7 +209,7 @@
   function onPointerDown(e) {
     if (!state.unlocked) return;
 
-    // If the gesture starts on an interactive thing (image/video/button/link/etc), DO NOT paint.
+    // If the gesture starts on an interactive thing, DO NOT paint.
     if (apIsDisallowedTarget(e.target)) {
       endPaint();
       return; // let the page handle tap/scroll/swipe normally
@@ -301,7 +222,6 @@
 
   function onPointerMove(e) {
     if (!state.painting) return;
-    kickInactivity();
     e.preventDefault(); // keep the stroke from panning the page
 
     const pt = getPoint(e);
@@ -341,7 +261,7 @@
     pushDab(x, y, MIN_BRUSH * k, c, OPACITY);
   }
 
-  // NEW: retained "dab" record (rendered each frame, then fades out)
+  // Retained "dab" record (rendered each frame, then fades out)
   function pushDab(x, y, size, colorHSB, alpha0) {
     const rot = (Math.random()*2-1) * 0.25;
     const rx  = size * (0.72 + Math.random()*0.20);
@@ -354,40 +274,8 @@
     });
   }
 
-  // ---------------- Unlock Gestures ----------------
-  let holdTimer = null;
-  function onTopHoldStart(e) {
-    const y = e.clientY ?? (e.touches && e.touches[0]?.clientY) ?? Infinity;
-    if (y > TOP_UNLOCK_BOUNDS) return;
-    clearTimeout(holdTimer);
-    holdTimer = setTimeout(() => unlock(), HOLD_TO_UNLOCK_MS);
-  }
-  function onTopHoldEnd() { clearTimeout(holdTimer); }
-
-  function bindPalette() {
-    // Single tap/click unlock
-    els.palette.addEventListener('click', () => unlock(), { passive: true });
-
-    // Double-click unlock (desktop convenience)
-    els.palette.addEventListener('dblclick', () => unlock());
-
-    // Long-press unlock (touch)
-    let pressTimer = null;
-    els.palette.addEventListener('pointerdown', () => {
-      clearTimeout(pressTimer);
-      pressTimer = setTimeout(() => unlock(), HOLD_ON_PALETTE_MS);
-    }, { passive: true });
-    ['pointerup','pointercancel','pointerleave'].forEach(ev =>
-      els.palette.addEventListener(ev, () => clearTimeout(pressTimer), { passive: true })
-    );
-  }
-
-  // ESC to relock
-  const onKey = e => { if (e.key === 'Escape') relock(); };
-
   // ---------------- Init ----------------
   function init() {
-    injectUI();
     ensureCanvas();
 
     // Document-level pointer routing (lets us paint across elements)
@@ -396,14 +284,7 @@
     document.addEventListener('pointerup', onPointerUp, { passive: true });
     document.addEventListener('pointercancel', onPointerUp, { passive: true });
 
-    // Unlock gestures
-    document.addEventListener('pointerdown', onTopHoldStart, { passive: true });
-    document.addEventListener('pointerup', onTopHoldEnd, { passive: true });
-    document.addEventListener('pointercancel', onTopHoldEnd, { passive: true });
-
-    bindPalette();
-    document.addEventListener('keydown', onKey, { passive: true });
-
+    // Safety: stop painting if tab loses focus
     window.addEventListener('blur', () => endPaint());
   }
 
