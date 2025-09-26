@@ -105,15 +105,15 @@ function makeVideoCard(src) {
   v.playsInline = true;
   v.muted = true;
   v.preload = "metadata";
-  v.controls = false;                                // preview mode
-  v.setAttribute("disablepictureinpicture", "");
+  v.controls = false;                 // hide chrome while just previewing
+  v.setAttribute("disablepictureinpicture", ""); // cleaner UI on iOS
 
-  // show a thumbnail frame (no giant play overlay)
+  // Show a frame so it looks like a thumbnail (no giant play overlay)
   v.addEventListener("loadedmetadata", () => {
     try { v.currentTime = Math.min(0.1, v.duration || 0.1); } catch {}
   }, { once: true });
 
-  // tap to enable controls and play
+  // On tap, enable controls and play
   v.addEventListener("click", () => {
     if (!v.controls) v.controls = true;
     v.play().catch(()=>{});
@@ -172,39 +172,27 @@ function makeFlipStackCard(files) {
     apply();
   });
 
-  // horizontal swipe to flip (axis lock so vertical scroll still works)
-  const drag = {down:false, x:0, y:0, locked:null};
+  // horizontal swipe to flip (phone-friendly)
+  const drag = {down:false, x:0, y:0};
   wrap.addEventListener("pointerdown", e=>{
-    drag.down = true; drag.x = e.clientX; drag.y = e.clientY; drag.locked = null;
+    drag.down = true; drag.x = e.clientX; drag.y = e.clientY;
     wrap.setPointerCapture?.(e.pointerId);
   });
   wrap.addEventListener("pointermove", e=>{
     if(!drag.down) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-
-    // Lock axis after a small threshold
-    if (drag.locked == null) {
-      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
-        drag.locked = (Math.abs(dx) > Math.abs(dy)) ? "x" : "y";
-      }
-    }
-
-    // Only prevent default if the user is clearly swiping horizontally
-    if (drag.locked === "x") {
-      e.preventDefault();
-      const active = wrap.querySelectorAll('.flipstack__item')[head];
-      if (active) active.style.transform = `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 14) {
+      e.preventDefault(); // stop page scroll while flipping
+      wrap.querySelectorAll('.flipstack__item')[head].style.transform =
+        `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
     }
   }, {passive:false});
   wrap.addEventListener("pointerup", e=>{
     if(!drag.down) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    const active = wrap.querySelectorAll('.flipstack__item')[head];
-    if (active) active.style.transform = "";
-    drag.down = false; drag.locked = null;
+    wrap.querySelectorAll('.flipstack__item')[head].style.transform = "";
+    drag.down = false;
     wrap.releasePointerCapture?.(e.pointerId);
-
-    // Flip only on horizontal flicks
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
       head = (head + (dx < 0 ? 1 : ordered.length - 1)) % ordered.length;
       apply();
@@ -220,7 +208,8 @@ function renderGroupedRows(mountId, fileList) {
   const mount = document.getElementById(mountId);
   if (!mount) return;
 
-  mount.classList.add("stacks"); // vertical list of collections
+  // Vertical list of collections
+  mount.classList.add("stacks");
 
   const collections = groupIntoCollections(fileList);
   if (!collections.length) {
@@ -239,8 +228,10 @@ function renderGroupedRows(mountId, fileList) {
     const anyVid  = files.some(isVideo);
 
     if (allImgs && files.length >= 1) {
+      // iMessage-style stack: X1 on top; X2/X3… inside
       wrapper.appendChild(makeFlipStackCard(files));
     } else if (anyVid) {
+      // Video collections → small horizontal row
       const row = document.createElement("div");
       row.className = "row";
       files.forEach(f => {
@@ -265,6 +256,7 @@ function wireLightbox() {
   LB.img = $("#lb-img");
   LB.cap = $("#lb-cap");
 
+  // Bind click handlers for all .lb links present at load
   $$(".lb").forEach(a =>
     on(a, "click", e => {
       e.preventDefault();
@@ -330,20 +322,25 @@ function menuControls(){
   btn.addEventListener('click', (e)=>{ e.stopPropagation(); toggle(); });
   veil.addEventListener('click', close);
 
+  // Close on outside clicks
   document.addEventListener('click', (e)=>{
     if (drop.hidden) return;
     const inside = drop.contains(e.target) || btn.contains(e.target);
     if (!inside) close();
   });
 
+  // Auto-close on scroll/resize/hashchange
   window.addEventListener('scroll', close, { passive: true });
   window.addEventListener('resize', close);
   window.addEventListener('hashchange', close);
+
+  // Close when picking a link
   drop.querySelectorAll('a').forEach(a=> a.addEventListener('click', close));
 }
 
 /* ------------------------- Intro video ------------------------- */
-/* Show ~6s then two-stage fade; always snap back to top on end/skip */
+/* Show ~6s then two-stage fade: video→black, then overlay fades away.
+   Always snap back to top when the intro ends or is skipped. */
 function introFlow() {
   const intro = $("#intro");
   const vid   = $("#introVideo");
@@ -393,6 +390,35 @@ function profileLink(){
   on(prof, "click", () => about.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
+/* --------- Global scroll gating: only scroll when touch starts on art --------- */
+/* IMPORTANT: Make sure styles.css does NOT set `html, body { touch-action: none }`.
+   We rely on native scrolling and only cancel touchmoves that start OFF art. */
+function gateScrollToArt() {
+  // consider taps on image/video AND their common wrappers as "on art"
+  const ART_SELECTOR = `
+    .card img, .card video,
+    .card, .card a.lb,
+    .flipstack, .flipstack__item, .flipstack__item img
+  `.replace(/\s+/g,' ');
+
+  let allowScroll = false;
+
+  // Decide at gesture start
+  document.addEventListener("touchstart", (e) => {
+    allowScroll = !!e.target.closest(ART_SELECTOR);
+  }, { passive: true });
+
+  // If gesture didn't start on art, block vertical scroll for that gesture
+  document.addEventListener("touchmove", (e) => {
+    if (!allowScroll) e.preventDefault();
+  }, { passive: false });
+
+  // Reset at gesture end
+  const reset = () => { allowScroll = false; };
+  document.addEventListener("touchend", reset, { passive: true });
+  document.addEventListener("touchcancel", reset, { passive: true });
+}
+
 /* --------------------------- Boot ------------------------------ */
 function boot() {
   renderGroupedRows("rows-life",        FILES.life);
@@ -406,7 +432,7 @@ function boot() {
   menuControls();
   introFlow();
   profileLink();
-  // NOTE: removed the global "gateScrollToArt" blocker.
+  gateScrollToArt();
 }
 
 document.addEventListener("DOMContentLoaded", boot);
