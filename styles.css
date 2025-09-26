@@ -343,6 +343,8 @@ img, video{
   font:600 .8rem/1 var(--font-sans);
   backdrop-filter:blur(2px);
   pointer-events:none;
+   z-index: 999;   
+   
 }
 
 /* Exaggerate the fan very briefly while the page is scrolling */
