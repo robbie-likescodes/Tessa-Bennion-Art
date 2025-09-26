@@ -17,7 +17,7 @@ const FILES = {
     "PortraitF1.jpeg", "PortraitG1.jpeg", "PortraitH1.jpeg"
   ],
   still: [
-    "StillA1.jpeg",
+    "StillA1.jpeg", "StillA2.JPG",
     "StillB1.jpeg"
   ],
   exhibitions: [
