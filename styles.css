@@ -35,6 +35,10 @@ html, body{
   height:100%;
 }
 
+/* Gate scrolling globally: default = no touch scrolling...
+   we'll opt IN on media/stack elements below. */
+html, body{ touch-action:none; }
+
 img, video{
   max-width:100%;
   height:auto;
@@ -167,7 +171,7 @@ img, video{
   padding:1rem;
   text-align:center;
   text-decoration:none;
-  color:var(--fg);
+  color:var(--fg);                     /* black, not blue */
   border-top:1px solid rgba(0,0,0,.05);
   font-size:1.15rem;                   /* larger menu items */
 }
@@ -270,7 +274,9 @@ img, video{
   position:relative;
   overflow:hidden;
   perspective:900px;
-  touch-action:none;                    /* JS handles horizontal flip gestures */
+  /* Allow vertical scroll when swipe is mostly up/down,
+     JS will only preventDefault on horizontal flips. */
+  touch-action:pan-y;
 }
 
 /* Layered cards */
@@ -391,7 +397,10 @@ img, video{
   outline-offset:3px;
 }
 
-/* -------- Scroll gating hooks --------
-   JS (app.js) enables page scroll only when a gesture starts on media. */
-html, body{ touch-action:none; }
-.card img, .card video, .flipstack{ touch-action:pan-y; }
+/* -------- Scroll gating opt-ins --------
+   Page only scrolls when touch STARTS on media/stack */
+.card img,
+.card video,
+.flipstack{
+  touch-action:pan-y;
+}
