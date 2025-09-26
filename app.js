@@ -387,33 +387,35 @@ function profileLink(){
   const about = document.querySelector("#about");
   if (!prof || !about) return;
   prof.style.cursor = "pointer";
-  on(prof, "click", () => about.scrollIntoView({ behavior: "smooth", block: "start" }));
-}
+  on(prof, "click", () => about.scrollIntoView({ behavior: "smooth", block: "
 
-/* --------- Global scroll gating: only scroll when touch starts on art --------- */
-/* IMPORTANT: Make sure styles.css does NOT set `html, body { touch-action: none }`.
-   We rely on native scrolling and only cancel touchmoves that start OFF art. */
-function gateScrollToArt() {
-  // consider taps on image/video AND their common wrappers as "on art"
+     function gateScrollToArt() {
+  // art selectors (images, videos, stacks, etc.)
   const ART_SELECTOR = `
     .card img, .card video,
     .card, .card a.lb,
     .flipstack, .flipstack__item, .flipstack__item img
   `.replace(/\s+/g,' ');
 
+  // non-art sections that should always allow scroll
+  const FREE_SELECTOR = `
+    #about, #contact, .section-about, .section-contact
+  `.replace(/\s+/g,' ');
+
   let allowScroll = false;
 
-  // Decide at gesture start
   document.addEventListener("touchstart", (e) => {
-    allowScroll = !!e.target.closest(ART_SELECTOR);
+    if (e.target.closest(ART_SELECTOR) || e.target.closest(FREE_SELECTOR)) {
+      allowScroll = true;
+    } else {
+      allowScroll = false;
+    }
   }, { passive: true });
 
-  // If gesture didn't start on art, block vertical scroll for that gesture
   document.addEventListener("touchmove", (e) => {
     if (!allowScroll) e.preventDefault();
   }, { passive: false });
 
-  // Reset at gesture end
   const reset = () => { allowScroll = false; };
   document.addEventListener("touchend", reset, { passive: true });
   document.addEventListener("touchcancel", reset, { passive: true });
