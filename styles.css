@@ -17,7 +17,7 @@
   --font-script:"Great Vibes",cursive;
 }
 
-/* Make any [hidden] truly hidden (prevents menu lingering) */
+/* Make any [hidden] truly hidden (prevents lingering UI) */
 [hidden]{ display:none !important; }
 
 /* ---------------- Reset ---------------- */
@@ -31,9 +31,8 @@ html, body{
   font-family:var(--font-serif);
   background:var(--bg);
   color:var(--fg);
-  overflow-x:hidden;                 /* never allow sideways pan */
-  /* allow normal vertical scrolling */
-  touch-action:auto;
+  overflow-x:hidden;      /* never allow sideways pan */
+  touch-action:auto;      /* allow normal vertical scrolling */
 }
 
 img, video{
@@ -54,17 +53,13 @@ img, video{
   transition:opacity .6s ease;
   overflow:hidden;
 }
-
 .intro-video{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
+  position:absolute; inset:0;
+  width:100%; height:100%;
   object-fit:cover;
   opacity:1;
-  z-index:1;                          /* video sits below overlay */
+  z-index:1; /* video sits below overlay */
 }
-
 /* soft vignette so white text always reads */
 .intro::after{
   content:"";
@@ -73,24 +68,19 @@ img, video{
   z-index:2;
   pointer-events:none;
 }
-
 .intro-overlay{
-  position:absolute;
-  inset:0;
-  display:grid;
-  place-items:center;
+  position:absolute; inset:0;
+  display:grid; place-items:center;
   z-index:3;
-  pointer-events:none;                /* overlay doesn't block Skip */
+  pointer-events:none; /* overlay doesn't block Skip */
 }
-
 .brand-script{
   font-family:var(--font-script);
   font-size:clamp(2rem,6vw,4rem);
   color:#fff;
   text-shadow:0 2px 6px rgba(0,0,0,.65), 0 0 1px rgba(0,0,0,.35);
 }
-
-/* Safe-area aware Skip button (always visible on iOS) */
+/* Safe-area aware Skip */
 .skip-intro{
   position:fixed;
   right:calc(env(safe-area-inset-right,0px) + 12px);
@@ -101,119 +91,142 @@ img, video{
   border:1px solid rgba(255,255,255,.25);
   padding:.55rem .95rem;
   border-radius:.5rem;
-  font-size:.95rem;
-  line-height:1;
+  font-size:.95rem; line-height:1;
   backdrop-filter:blur(6px);
 }
-
 .intro.fade-video .intro-video{
   opacity:0;
-  transition:opacity .7s ease;        /* Stage 1: video → black */
+  transition:opacity .7s ease; /* Stage 1: video → black */
 }
 .intro.fade-overlay{
-  opacity:0;                          /* Stage 2: overlay → gone */
+  opacity:0;                    /* Stage 2: overlay → gone */
   pointer-events:none;
 }
 
-/* ---------------- Header ---------------- */
-/* Use flex + absolute centering so "Menu" is perfectly centered on the page
-   regardless of right-side icons. */
+/* ---------------- Header (profile • centered title • hamburger) ---------------- */
 .site-header{
   position:sticky;
   top:0;
   z-index:900;
-  display:flex;
+  display:grid;
+  grid-template-columns:auto 1fr auto; /* profile | title | burger */
   align-items:center;
-  justify-content:space-between;
+  gap:.75rem;
   padding:.5rem var(--pad);
   background:rgba(250,249,247,.9);
   backdrop-filter:blur(6px);
   border-bottom:1px solid rgba(0,0,0,.08);
 }
 
-/* Center the Menu text absolutely within the header */
-.site-header .menu-trigger{
-  position:absolute;
-  left:50%;
-  transform:translateX(-50%);
-}
-
-/* Bigger, black Menu label */
-#menuTrigger,
-.menu-trigger{
+/* Left: profile thumb (button for a11y) */
+.profile-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
   background:none;
-  border:none;
-  font:600 1.2rem/1 var(--font-serif);
-  padding:.6rem;
-  color:#000;
+  border:0;
   cursor:pointer;
 }
-
-/* right-side icons align right naturally via flex spacing */
-#ap-palette-mount{ display:inline-flex; margin-left:.5rem; }
 .profile{
   width:40px; height:40px;
   border-radius:50%;
   object-fit:cover;
-  margin-left:.75rem;
-  cursor:pointer;
 }
 
-#menuDropdown,
-.menu-dropdown{
-  position:absolute;
-  top:100%; left:0; right:0;
-  background:var(--bg);
-  border-bottom:1px solid rgba(0,0,0,.08);
-  display:flex; flex-direction:column;
-  z-index:910;
-}
-.menu-link{
-  padding:1rem;
+/* Center: site title */
+.site-title{
   text-align:center;
+  font-weight:600;
+  letter-spacing:.02em;
+}
+
+/* Right: hamburger */
+.hamburger{
+  width:40px; height:40px;
+  display:inline-grid; place-items:center;
+  background:none; border:0; cursor:pointer;
+  position:relative;
+}
+.hamburger span{
+  display:block;
+  width:20px; height:2px;
+  background:#000;
+  margin:3px 0;
+  transition:transform .2s ease, opacity .2s ease;
+}
+
+/* ---------------- Side Drawer ---------------- */
+.side-drawer{
+  position:fixed;
+  top:0; right:0; bottom:0;
+  width:min(80vw, 300px);
+  background:var(--bg);
+  border-left:1px solid rgba(0,0,0,.08);
+  transform:translateX(100%);
+  transition:transform .28s ease;
+  z-index:1003;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) 16px 16px;
+}
+.side-drawer[hidden]{ display:block; } /* keep in DOM but offscreen */
+.side-drawer.is-open{ transform:translateX(0); }
+
+.drawer-overlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.25);
+  backdrop-filter:blur(2px);
+  z-index:1002;
+}
+.drawer-overlay[hidden]{ display:none; }
+
+.drawer-nav{
+  display:flex; flex-direction:column;
+  gap:.25rem;
+  margin-top:.5rem;
+}
+.drawer-link{
+  display:block;
+  padding:1rem .5rem;
   text-decoration:none;
   color:var(--fg);
-  border-top:1px solid rgba(0,0,0,.05);
-  font-size:1.15rem;                   /* larger menu items */
+  font-size:1.1rem;
+  text-align:left;
+  border-top:1px solid rgba(0,0,0,.06);
 }
-.menu-link:hover,
-.menu-link:focus-visible{ background:rgba(0,0,0,.05); }
+.drawer-link:first-child{ border-top:0; }
+.drawer-link:focus-visible,
+.drawer-link:hover{ background:rgba(0,0,0,.05); }
 
-#menuOverlay,
-.menu-overlay{
-  position:fixed; inset:0;
-  background:rgba(0,0,0,.2);
-  backdrop-filter:blur(2px);
-  z-index:905;
-}
+/* Optional palette mount (if you ever re-add it) */
+#ap-palette-mount{ display:inline-flex; margin-left:.5rem; }
 
 /* ---------------- Sections ---------------- */
 .section{
   padding:2rem var(--pad);
   max-width:var(--maxw);
-  margin:0 auto;                       /* center the main feed */
+  margin:0 auto;               /* center the main feed */
 }
 .section-title{
   font-family:var(--font-serif);
   font-size:1.5rem;
   margin:0 0 .75rem;
-  text-align:center;                   /* centered section titles */
+  text-align:center;           /* centered section titles */
 }
 
 /* ---------------- Vertical stacks (A, B, C…) ---------------- */
 .stacks{
   display:grid;
-  grid-auto-flow:row;                  /* vertical order */
+  grid-auto-flow:row;          /* vertical order */
   grid-template-columns:1fr;
   gap:1.25rem;
 }
 .stack-row{
   width:100%;
   display:grid;
-  place-items:center;                  /* center each stack */
+  place-items:center;          /* center each stack */
 }
 
-/* If a mount still has the old 'rows' class, force vertical behavior */
+/* If a mount still has old 'rows' class, force vertical */
 .rows.stacks{
   overflow:visible !important;
   scroll-snap-type:none !important;
@@ -222,7 +235,7 @@ img, video{
   gap:1rem !important;
 }
 
-/* ---------------- Horizontal rows (used inside some stacks, e.g. videos) ---------------- */
+/* ---------------- Horizontal rows (e.g., videos) ---------------- */
 .rows{
   display:flex;
   gap:1rem;
@@ -249,7 +262,7 @@ img, video{
 .card img,
 .card video{
   width:100%;
-  border-radius:0;
+  border-radius:0; /* sharp corners */
   box-shadow:0 2px 6px rgba(0,0,0,.15);
   object-fit:cover;
 }
@@ -257,12 +270,12 @@ img, video{
 /* Allow vertical scroll when gesture starts on art */
 .card, .card a, .card a.lb, .card img, .card video,
 .flipstack, .flipstack__item, .flipstack__item img{
-  touch-action: pan-y; /* UA handles vertical scroll; JS only takes horizontal flip */
+  touch-action:pan-y; /* UA handles vertical scroll; JS only takes horizontal flip */
 }
 
 /* Keep video cards consistent */
 .card video{
-  aspect-ratio:16/9;                    /* adjust if you prefer 4/5 portrait */
+  aspect-ratio:16/9; /* adjust if you prefer 4/5 portrait */
   border:0;
   background:#000;
 }
@@ -273,17 +286,15 @@ img, video{
   margin-top:.3rem;
 }
 
-/* ---------------- Flip Stack (iMessage vibe) ---------------- */
+/* ---------------- Flip Stack ---------------- */
 .flipstack{
   width:min(92vw, 560px);
   aspect-ratio:4/5;
   margin:0 auto;
-  border-radius: 0;
+  border-radius:0;
   position:relative;
   overflow:hidden;
   perspective:900px;
-  /* allow pan-y so vertical scroll works when starting on the stack. */
-
   /* Stronger fan variables */
   --peek-x: 14px;   /* horizontal corner peek */
   --peek-y: 22px;   /* vertical drop */
@@ -303,29 +314,21 @@ img, video{
   object-fit:cover; border-radius:0;
 }
 
-/* Stronger feathered positions (clearer that it flips) */
-.flipstack__item[data-pos="0"]{
-  z-index:3; opacity:1; transform:rotate(0) translateZ(0);
-}
+/* Feathered positions (clear flip hint) */
+.flipstack__item[data-pos="0"]{ z-index:3; opacity:1;   transform:rotate(0) translateZ(0); }
 .flipstack__item[data-pos="1"]{
   z-index:2; opacity:.92;
-  transform: rotate(calc(var(--rot) * -1))
-             scale(.975)
-             translateY(var(--peek-y))
-             translateX(calc(var(--peek-x) * -1));
+  transform: rotate(calc(var(--rot) * -1)) scale(.975)
+             translateY(var(--peek-y)) translateX(calc(var(--peek-x) * -1));
   filter:saturate(.95) brightness(.99);
 }
 .flipstack__item[data-pos="2"]{
   z-index:1; opacity:.86;
-  transform: rotate(var(--rot))
-             scale(.96)
-             translateY(calc(var(--peek-y) + 6px))
-             translateX(var(--peek-x));
+  transform: rotate(var(--rot)) scale(.96)
+             translateY(calc(var(--peek-y) + 6px)) translateX(var(--peek-x));
   filter:saturate(.9) brightness(.97);
 }
-.flipstack__item[data-pos="rest"]{
-  z-index:0; opacity:0; transform:scale(.95) translateY(18px);
-}
+.flipstack__item[data-pos="rest"]{ z-index:0; opacity:0; transform:scale(.95) translateY(18px); }
 
 /* Thin light rim so rear cards read as separate layers */
 .flipstack__item[data-pos="1"]::before,
@@ -338,7 +341,7 @@ img, video{
   pointer-events:none;
 }
 
-/* Legacy numeric badge (kept, always on top) */
+/* Legacy numeric badge (kept just in case; always on top) */
 .flipstack__badge{
   position:absolute; right:8px; top:8px;
   padding:4px 8px;
@@ -348,11 +351,11 @@ img, video{
   font:600 .8rem/1 var(--font-sans);
   backdrop-filter:blur(2px);
   pointer-events:none;
-  z-index:999;
+  z-index:1001;
 }
 
-/* Dots pagination (classier replacement for badge) */
-.flipstack__dots{
+/* Classy pager dots (matches JS: .flipstack__pager + .flipstack__dot) */
+.flipstack__pager{
   position:absolute;
   left:50%; bottom:8px;
   transform:translateX(-50%);
@@ -361,7 +364,7 @@ img, video{
   border-radius:999px;
   background:rgba(255,255,255,.65);
   backdrop-filter:blur(4px);
-  z-index:1000;
+  z-index:1002; /* above images & badge */
 }
 .flipstack__dot{
   width:6px; height:6px;
@@ -376,16 +379,14 @@ img, video{
   opacity:1;
 }
 
-/* Exaggerate the fan very briefly while the page is scrolling */
+/* Exaggerate the fan briefly while the page is scrolling */
 body.stack-peek .flipstack__item[data-pos="1"]{
-  transform: rotate(calc(var(--rot) * -1.2))
-             scale(.96)
+  transform: rotate(calc(var(--rot) * -1.2)) scale(.96)
              translateY(calc(var(--peek-y) + 6px))
              translateX(calc(var(--peek-x) * -1.2));
 }
 body.stack-peek .flipstack__item[data-pos="2"]{
-  transform: rotate(calc(var(--rot) * 1.2))
-             scale(.955)
+  transform: rotate(calc(var(--rot) * 1.2)) scale(.955)
              translateY(calc(var(--peek-y) + 10px))
              translateX(calc(var(--peek-x) * 1.2));
   opacity:.9;
@@ -408,7 +409,7 @@ body.stack-peek .flipstack__item[data-pos="2"]{
 /* ---------------- Contact ---------------- */
 #contact p{ font-size:1.05rem; text-align:center; }
 #contact a{ color:var(--accent); text-decoration:underline; }
-#contact { margin-bottom: 3rem; }
+#contact { margin-bottom: 3rem; } /* keep content off the extreme bottom */
 
 /* Instagram row */
 .social-links{
@@ -416,13 +417,9 @@ body.stack-peek .flipstack__item[data-pos="2"]{
   text-align:center;
 }
 .social-links a{
-  display:inline-flex;
-  align-items:center;
-  gap:.5rem;
+  display:inline-flex; align-items:center; gap:.5rem;
   font-family:var(--font-sans, sans-serif);
-  font-size:1rem;
-  color:#000;
-  text-decoration:none;
+  font-size:1rem; color:#000; text-decoration:none;
 }
 .social-links a:hover{ text-decoration:underline; }
 .social-icon{ width:24px; height:24px; display:inline-block; }
@@ -432,8 +429,7 @@ body.stack-peek .flipstack__item[data-pos="2"]{
   position:fixed;
   bottom:0; left:0; right:0;
   background:rgba(250,249,247,.95);
-  display:flex;
-  justify-content:space-around;
+  display:flex; justify-content:space-around;
   padding:.5rem 0;
   border-top:1px solid rgba(0,0,0,.08);
   backdrop-filter:blur(6px);
@@ -473,11 +469,13 @@ body.stack-peek .flipstack__item[data-pos="2"]{
 }
 .ap-palette svg{ width:100%; height:100%; display:block; }
 #ap-toast{
-  position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom,0px) + 70px);
+  position:fixed;
+  left:50%; bottom:calc(env(safe-area-inset-bottom,0px) + 70px);
   transform:translateX(-50%) translateY(20px);
   background:rgba(0,0,0,.7); color:#fff;
   padding:.5rem .8rem; border-radius:.5rem;
-  font:.9rem/1 var(--font-sans); opacity:0; pointer-events:none;
+  font:.9rem/1 var(--font-sans);
+  opacity:0; pointer-events:none;
   transition:opacity .25s ease, transform .25s ease;
   z-index:950;
 }
