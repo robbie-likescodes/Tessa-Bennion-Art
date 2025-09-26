@@ -311,16 +311,36 @@ function smoothNav() {
     })
   );
 
+  // UPDATED: choose the section centered in the viewport
+  const updateActive = (id) => {
+    allLinks.forEach(link =>
+      link.classList.toggle("active", link.getAttribute("href") === id)
+    );
+    $$(".bottom-dock a").forEach(link =>
+      link.classList.toggle("active-chip", link.getAttribute("href") === id)
+    );
+  };
+
+  let currentId = null;
   const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      const id = "#" + entry.target.id;
-      allLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === id));
-      $$(".bottom-dock a").forEach(link =>
-        link.classList.toggle("active-chip", link.getAttribute("href") === id)
-      );
-    });
-  }, { threshold: 0.2 });
+    let best = null;
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
+    }
+    if (best) {
+      const id = "#" + best.target.id;
+      if (id !== currentId) {
+        currentId = id;
+        updateActive(id);
+      }
+    }
+  }, {
+    root: null,
+    // a tight middle band prevents the next section from stealing focus
+    rootMargin: "-45% 0px -45% 0px",
+    threshold: [0.01, 0.25, 0.5, 0.75, 1]
+  });
 
   $$("section[id]").forEach(sec => io.observe(sec));
 }
@@ -396,18 +416,16 @@ function drawerControls(){
 }
 
 /* ------------------------- Intro video ------------------------- */
-/* Show ~6s then two-stage fade: video→black, then overlay fades away.
-   Always snap back to top when the intro ends or is skipped. */
 function introFlow() {
   const intro = $("#intro");
   const vid   = $("#introVideo");
   const skip  = $("#skipIntro");
   if (!intro || !vid) return;
 
-    vid.muted = true;
+  vid.muted = true;
   vid.autoplay = true;
-  vid.playsInline = true;                // property
-  vid.setAttribute("playsinline", "");   // attribute (belt & suspenders)
+  vid.playsInline = true;
+  vid.setAttribute("playsinline", "");
   vid.setAttribute("webkit-playsinline", "");
   vid.controls = false;
 
@@ -415,7 +433,6 @@ function introFlow() {
   const STAGE1  = 700;
   let started = false;
 
-  // Safe on iOS/desktop
   const snapTop = () => {
     try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }
     catch { window.scrollTo(0, 0); }
@@ -451,9 +468,7 @@ function introFlow() {
 
 /* ---------------- Profile → About link ---------------- */
 function profileLink(){
-  // Legacy header avatar
   const profLegacy = document.querySelector(".site-header .profile");
-  // New app-bar avatar (inside .avatar-btn or direct .app-bar .profile)
   const profNew = document.querySelector(".app-bar .profile");
 
   const about = document.querySelector("#about");
@@ -473,14 +488,12 @@ function profileLink(){
 
 /* --------- Global scroll gating: only scroll when touch starts on art --------- */
 function gateScrollToArt() {
-  // art selectors (images, videos, stacks, etc.)
   const ART_SELECTOR = `
     .card img, .card video,
     .card, .card a.lb,
     .flipstack, .flipstack__item, .flipstack__item img
   `.replace(/\s+/g,' ');
 
-  // non-art sections that should always allow scroll
   const FREE_SELECTOR = `
     #about, #contact, .section-about, .section-contact
   `.replace(/\s+/g,' ');
@@ -512,7 +525,6 @@ function hintStacksWhileScrolling(){
 
 /* --------------------------- Boot ------------------------------ */
 function boot() {
-  // Render in requested order: Portrait → Still → Life → Exhibitions → Sketches
   renderGroupedRows("rows-portrait",    FILES.portrait);
   renderGroupedRows("rows-still",       FILES.still);
   renderGroupedRows("rows-life",        FILES.life);
@@ -522,9 +534,7 @@ function boot() {
   wireLightbox();
   smoothNav();
 
-  // Legacy dropdown (if present)
   menuControls();
-  // New app-bar drawer (if present)
   drawerControls();
 
   introFlow();
