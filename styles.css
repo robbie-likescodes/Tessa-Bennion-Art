@@ -32,12 +32,10 @@ html, body{
   background:var(--bg);
   color:var(--fg);
   overflow-x:hidden;                 /* never allow sideways pan */
-  height:100%;
+  /* IMPORTANT: allow normal vertical scrolling again */
+  /* (we previously had touch-action:none here, which blocked scroll) */
+  touch-action: auto;
 }
-
-/* Gate scrolling globally: default = no touch scrolling...
-   we'll opt IN on media/stack elements below. */
-html, body{ touch-action:none; }
 
 img, video{
   max-width:100%;
@@ -171,7 +169,7 @@ img, video{
   padding:1rem;
   text-align:center;
   text-decoration:none;
-  color:var(--fg);                     /* black, not blue */
+  color:var(--fg);
   border-top:1px solid rgba(0,0,0,.05);
   font-size:1.15rem;                   /* larger menu items */
 }
@@ -252,6 +250,12 @@ img, video{
   object-fit:cover;
 }
 
+/* Allow vertical scroll when gesture starts on art */
+.card, .card a, .card a.lb, .card img, .card video,
+.flipstack, .flipstack__item, .flipstack__item img{
+  touch-action: pan-y; /* UA handles vertical scroll; JS only takes horizontal flip */
+}
+
 /* Keep video cards consistent */
 .card video{
   aspect-ratio:16/9;                    /* adjust if you prefer 4/5 portrait */
@@ -274,12 +278,10 @@ img, video{
   position:relative;
   overflow:hidden;
   perspective:900px;
-  /* Allow vertical scroll when swipe is mostly up/down,
-     JS will only preventDefault on horizontal flips. */
-  touch-action:pan-y;
+  /* NOTE: previously this was touch-action:none; that blocked scroll.
+     We now allow pan-y so vertical scroll works when starting on the stack. */
 }
 
-/* Layered cards */
 .flipstack__item{
   position:absolute; inset:0;
   border-radius:16px;
@@ -395,12 +397,4 @@ img, video{
 :focus-visible{
   outline:2px solid rgba(0,0,0,.35);
   outline-offset:3px;
-}
-
-/* -------- Scroll gating opt-ins --------
-   Page only scrolls when touch STARTS on media/stack */
-.card img,
-.card video,
-.flipstack{
-  touch-action:pan-y;
 }
