@@ -11,12 +11,12 @@ const FILES = {
   ],
   portrait: [
     "PortraitA1.JPEG",
-    "PortraitB1.jpeg", "PortraitB2.jpeg", "PortraitB3.PNG",
+    "PortraitB1.jpeg", 
     "PortraitC1.jpeg", "PortraitD1.jpeg", "PortraitE1.jpeg",
     "PortraitF1.jpeg", "PortraitG1.jpeg", "PortraitH1.jpeg"
   ],
   still: [
-    "StillA1.jpeg", "StillA2.JPG", "StillA3.JPEG", "StillA4.jpeg",
+    "StillA1.jpeg", 
     "StillB1.jpeg"
   ],
   exhibitions: [
