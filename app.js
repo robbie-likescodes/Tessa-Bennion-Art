@@ -134,24 +134,44 @@ function makeFlipStackCard(files) {
   const wrap = document.createElement("div");
   wrap.className = "flipstack";
 
+  // layers
   const layers = ordered.map((f,i)=>{
     const item = document.createElement("div");
     item.className = "flipstack__item";
     item.dataset.pos = i===0 ? "0" : i===1 ? "1" : i===2 ? "2" : "rest";
     const img = document.createElement("img");
-    img.loading="lazy"; img.decoding="async";
-    img.src = BASE + f; img.alt = humanizeFilename(f);
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.src = BASE + f;
+    img.alt = humanizeFilename(f);
     item.appendChild(img);
     wrap.appendChild(item);
     return item;
   });
 
-  const badge = document.createElement("div");
-  badge.className = "flipstack__badge";
-  badge.textContent = `1/${ordered.length}`;
-  wrap.appendChild(badge);
+  // classy pager dots (replaces numeric badge)
+  const pager = document.createElement("div");
+  pager.className = "flipstack__pager";
+  const dots = ordered.map((_, i) => {
+    const d = document.createElement("span");
+    d.className = "flipstack__dot" + (i === 0 ? " is-active" : "");
+    pager.appendChild(d);
+    return d;
+  });
+  wrap.appendChild(pager);
+
+  // (Keep old badge in DOM only if CSS still references it; otherwise omit)
+  // const badge = document.createElement("div");
+  // badge.className = "flipstack__badge";
+  // badge.textContent = `1/${ordered.length}`;
+  // wrap.appendChild(badge);
 
   let head = 0;
+
+  const setActiveDot = (idx) => {
+    dots.forEach((d, i) => d.classList.toggle("is-active", i === idx));
+  };
+
   const apply = ()=>{
     layers.forEach((el,i)=>{
       const rel = (i - head + ordered.length) % ordered.length;
@@ -162,7 +182,9 @@ function makeFlipStackCard(files) {
         el.onclick = null;
       }
     });
-    badge.textContent = `${head+1}/${ordered.length}`;
+    setActiveDot(head);
+    // if you kept the numeric badge:
+    // badge.textContent = `${head+1}/${ordered.length}`;
   };
   apply();
 
@@ -183,14 +205,15 @@ function makeFlipStackCard(files) {
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 14) {
       e.preventDefault(); // stop page scroll while flipping
-      wrap.querySelectorAll('.flipstack__item')[head].style.transform =
-        `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
+      const current = wrap.querySelectorAll('.flipstack__item')[head];
+      if (current) current.style.transform = `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
     }
   }, {passive:false});
   wrap.addEventListener("pointerup", e=>{
     if(!drag.down) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    wrap.querySelectorAll('.flipstack__item')[head].style.transform = "";
+    const current = wrap.querySelectorAll('.flipstack__item')[head];
+    if (current) current.style.transform = "";
     drag.down = false;
     wrap.releasePointerCapture?.(e.pointerId);
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
@@ -436,9 +459,10 @@ function hintStacksWhileScrolling(){
 
 /* --------------------------- Boot ------------------------------ */
 function boot() {
-  renderGroupedRows("rows-life",        FILES.life);
+  // Render in requested order: Portrait → Still → Life → Exhibitions → Sketches
   renderGroupedRows("rows-portrait",    FILES.portrait);
   renderGroupedRows("rows-still",       FILES.still);
+  renderGroupedRows("rows-life",        FILES.life);
   renderGroupedRows("rows-exhibitions", FILES.exhibitions);
   renderGroupedRows("rows-sketches",    FILES.sketches);
 
