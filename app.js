@@ -105,15 +105,15 @@ function makeVideoCard(src) {
   v.playsInline = true;
   v.muted = true;
   v.preload = "metadata";
-  v.controls = false;                 // hide chrome while just previewing
-  v.setAttribute("disablepictureinpicture", ""); // cleaner UI on iOS
+  v.controls = false;                                // preview mode
+  v.setAttribute("disablepictureinpicture", "");
 
-  // Show a frame so it looks like a thumbnail (no giant play overlay)
+  // show a thumbnail frame (no giant play overlay)
   v.addEventListener("loadedmetadata", () => {
     try { v.currentTime = Math.min(0.1, v.duration || 0.1); } catch {}
   }, { once: true });
 
-  // On tap, enable controls and play
+  // tap to enable controls and play
   v.addEventListener("click", () => {
     if (!v.controls) v.controls = true;
     v.play().catch(()=>{});
@@ -172,7 +172,7 @@ function makeFlipStackCard(files) {
     apply();
   });
 
-  // horizontal swipe to flip (phone-friendly)
+  // horizontal swipe to flip
   const drag = {down:false, x:0, y:0};
   wrap.addEventListener("pointerdown", e=>{
     drag.down = true; drag.x = e.clientX; drag.y = e.clientY;
@@ -183,13 +183,17 @@ function makeFlipStackCard(files) {
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 14) {
       e.preventDefault(); // stop page scroll while flipping
-      layers[head].style.transform = `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
+      const layersEls = wrap.querySelectorAll('.flipstack__item');
+      if (layersEls[head]) {
+        layersEls[head].style.transform = `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
+      }
     }
   }, {passive:false});
   wrap.addEventListener("pointerup", e=>{
     if(!drag.down) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    layers[head].style.transform = ""; // restore
+    const layersEls = wrap.querySelectorAll('.flipstack__item');
+    if (layersEls[head]) layersEls[head].style.transform = "";
     drag.down = false;
     wrap.releasePointerCapture?.(e.pointerId);
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
@@ -207,8 +211,7 @@ function renderGroupedRows(mountId, fileList) {
   const mount = document.getElementById(mountId);
   if (!mount) return;
 
-  // Vertical list of collections
-  mount.classList.add("stacks");
+  mount.classList.add("stacks"); // vertical list of collections
 
   const collections = groupIntoCollections(fileList);
   if (!collections.length) {
@@ -227,7 +230,7 @@ function renderGroupedRows(mountId, fileList) {
     const anyVid  = files.some(isVideo);
 
     if (allImgs && files.length >= 1) {
-      wrapper.appendChild(makeFlipStackCard(files)); // iMessage-like stack
+      wrapper.appendChild(makeFlipStackCard(files));
     } else if (anyVid) {
       const row = document.createElement("div");
       row.className = "row";
@@ -318,25 +321,20 @@ function menuControls(){
   btn.addEventListener('click', (e)=>{ e.stopPropagation(); toggle(); });
   veil.addEventListener('click', close);
 
-  // Close on outside clicks
   document.addEventListener('click', (e)=>{
     if (drop.hidden) return;
     const inside = drop.contains(e.target) || btn.contains(e.target);
     if (!inside) close();
   });
 
-  // Auto-close on scroll/resize/hashchange
   window.addEventListener('scroll', close, { passive: true });
   window.addEventListener('resize', close);
   window.addEventListener('hashchange', close);
-
-  // Close when picking a link
   drop.querySelectorAll('a').forEach(a=> a.addEventListener('click', close));
 }
 
 /* ------------------------- Intro video ------------------------- */
-/* Show ~6s then two-stage fade: video→black, then overlay fades away.
-   Always snap back to top when the intro ends or is skipped. */
+/* Show ~6s then two-stage fade; always snap back to top on end/skip */
 function introFlow() {
   const intro = $("#intro");
   const vid   = $("#introVideo");
@@ -388,18 +386,32 @@ function profileLink(){
 
 /* --------- Global scroll gating: only scroll when touch starts on art --------- */
 function gateScrollToArt() {
-  let allowScroll = false;
-  const ART_SELECTOR = ".card img, .card video, .flipstack";
+  const ART_SELECTOR = ".card img, .card video, .flipstack, .flipstack__item, .flipstack__item img";
+  let locked = false;
 
-  // Touch start decides whether this gesture may scroll
+  const setScrollLocked = (lock) => {
+    if (locked === lock) return;
+    locked = lock;
+    const html = document.documentElement;
+    const body = document.body;
+    const val = lock ? "hidden" : "";
+    html.style.overflow = val;
+    body.style.overflow = val;
+    // helps on iOS
+    html.style.overscrollBehaviorY = lock ? "none" : "";
+    body.style.overscrollBehaviorY = lock ? "none" : "";
+  };
+
+  // decide at gesture start
   document.addEventListener("touchstart", (e) => {
-    allowScroll = !!e.target.closest(ART_SELECTOR);
+    const onArt = !!e.target.closest(ART_SELECTOR);
+    setScrollLocked(!onArt); // lock when NOT starting on art
   }, { passive: true });
 
-  // If gesture didn't start on art, block vertical scroll
-  document.addEventListener("touchmove", (e) => {
-    if (!allowScroll) e.preventDefault();
-  }, { passive: false });
+  // always unlock when gesture ends
+  const unlock = () => setScrollLocked(false);
+  document.addEventListener("touchend", unlock, { passive: true });
+  document.addEventListener("touchcancel", unlock, { passive: true });
 }
 
 /* --------------------------- Boot ------------------------------ */
