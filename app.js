@@ -1,10 +1,5 @@
 /* =========================================================
-   Tessa Bennion — app.js
-   - Intro (6s hold → two-stage fade)
-   - Side drawer menu (hamburger open/close)
-   - Profile → About smooth link
-   - Flip stacks with pager dots
-   - Lightbox, smooth nav, scroll gating
+   Tessa Bennion — app.js (intro 6s hold → two-stage fade, menu autoclose, profile→about)
 ========================================================= */
 
 /* ------------ List your files (exact names) ------------ */
@@ -299,8 +294,8 @@ function wireLightbox() {
 /* ---------------------- Smooth section nav --------------------- */
 function smoothNav() {
   const dockLinks   = $$(".bottom-dock a");
-  const drawerLinks = $$(".side-drawer a, .drawer-link");
-  const allLinks    = [...dockLinks, ...drawerLinks];
+  const menuLinks   = $$(".menu-dropdown a");
+  const allLinks    = [...dockLinks, ...menuLinks];
 
   allLinks.forEach(a =>
     on(a, "click", (e) => {
@@ -311,9 +306,6 @@ function smoothNav() {
       e.preventDefault();
       target.scrollIntoView({ behavior: "smooth", block: "start" });
       history.replaceState(null, "", href);
-      // close drawer if link came from it
-      const drawer = $("#sideDrawer");
-      if (drawer && drawer.contains(a)) closeDrawer();
     })
   );
 
@@ -331,41 +323,37 @@ function smoothNav() {
   $$("section[id]").forEach(sec => io.observe(sec));
 }
 
-/* ----------------------- Side Drawer UX ---------------------- */
-function drawerControls(){
-  const btn     = document.getElementById('hamburgerBtn');
-  const drawer  = document.getElementById('sideDrawer');
-  const overlay = document.getElementById('drawerOverlay');
-  if (!btn || !drawer || !overlay) return;
+/* ----------------------- Menu dropdown UX ---------------------- */
+function menuControls(){
+  const btn   = document.getElementById('menuTrigger');
+  const drop  = document.getElementById('menuDropdown');
+  const veil  = document.getElementById('menuOverlay');
+  if (!btn || !drop || !veil) return;
 
-  const open = () => {
-    btn.setAttribute('aria-expanded','true');
-    drawer.hidden = false;
-    overlay.hidden = false;
-    // allow CSS slide-in
-    requestAnimationFrame(() => drawer.classList.add('is-open'));
-  };
-  const close = () => {
-    btn.setAttribute('aria-expanded','false');
-    drawer.classList.remove('is-open');
-    // wait for transition, then fully hide
-    const onEnd = () => {
-      drawer.hidden = true;
-      overlay.hidden = true;
-      drawer.removeEventListener('transitionend', onEnd);
-    };
-    drawer.addEventListener('transitionend', onEnd);
-  };
+  const open  = () => { btn.setAttribute('aria-expanded','true');  drop.hidden = false; veil.hidden = false; };
+  const close = () => { btn.setAttribute('aria-expanded','false'); drop.hidden = true;  veil.hidden = true;  };
   const toggle = () => (btn.getAttribute('aria-expanded') === 'true' ? close() : open());
 
-  // start closed
-  drawer.hidden = true; overlay.hidden = true; btn.setAttribute('aria-expanded','false');
+  // Force closed on load
+  close();
 
   btn.addEventListener('click', (e)=>{ e.stopPropagation(); toggle(); });
-  overlay.addEventListener('click', close);
-  window.addEventListener('hashchange', close);
+  veil.addEventListener('click', close);
+
+  // Close on outside clicks
+  document.addEventListener('click', (e)=>{
+    if (drop.hidden) return;
+    const inside = drop.contains(e.target) || btn.contains(e.target);
+    if (!inside) close();
+  });
+
+  // Auto-close on scroll/resize/hashchange
+  window.addEventListener('scroll', close, { passive: true });
   window.addEventListener('resize', close);
-  document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') close(); });
+  window.addEventListener('hashchange', close);
+
+  // Close when picking a link
+  drop.querySelectorAll('a').forEach(a=> a.addEventListener('click', close));
 }
 
 /* ------------------------- Intro video ------------------------- */
@@ -417,29 +405,28 @@ function introFlow() {
 
 /* ---------------- Profile → About link ---------------- */
 function profileLink(){
-  const profBtn = document.getElementById("profileBtn");
-  const profImg = document.querySelector(".profile");
-  const about   = document.querySelector("#about");
-  const handler = () => about?.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  if (profBtn) on(profBtn, "click", handler);
-  else if (profImg) {
-    profImg.style.cursor = "pointer";
-    on(profImg, "click", handler);
-  }
+  const prof = document.querySelector(".profile");
+  const about = document.querySelector("#about");
+  if (!prof || !about) return;
+  prof.style.cursor = "pointer";
+  on(prof, "click", () =>
+    about.scrollIntoView({ behavior: "smooth", block: "start" })
+  );
 }
 
 /* --------- Global scroll gating: only scroll when touch starts on art --------- */
+/* We rely on native scrolling and only cancel touchmoves that start OFF art. */
 function gateScrollToArt() {
+  // art selectors (images, videos, stacks, etc.)
   const ART_SELECTOR = `
     .card img, .card video,
     .card, .card a.lb,
     .flipstack, .flipstack__item, .flipstack__item img
   `.replace(/\s+/g,' ');
 
+  // non-art sections that should always allow scroll
   const FREE_SELECTOR = `
-    #about, #contact, .section-about, .section-contact,
-    #sideDrawer, .side-drawer, #drawerOverlay, .drawer-overlay
+    #about, #contact, .section-about, .section-contact
   `.replace(/\s+/g,' ');
 
   let allowScroll = false;
@@ -453,8 +440,8 @@ function gateScrollToArt() {
   }, { passive: false });
 
   const reset = () => { allowScroll = false; };
-  document.addEventListener("touchend", reset,   { passive: true });
-  document.addEventListener("touchcancel", reset,{ passive: true });
+  document.addEventListener("touchend", reset, { passive: true });
+  document.addEventListener("touchcancel", reset, { passive: true });
 }
 
 /* --------- Briefly exaggerate the fan while scrolling (CSS hook) --------- */
@@ -478,7 +465,7 @@ function boot() {
 
   wireLightbox();
   smoothNav();
-  drawerControls();      // NEW: hamburger / side-drawer logic
+  menuControls();
   introFlow();
   profileLink();
   gateScrollToArt();
@@ -493,20 +480,4 @@ function openLightbox(src, caption){
   $("#lb-img").src = src;
   $("#lb-cap").textContent = caption || "";
   lb.hidden = false;
-}
-
-/* ------------- Drawer helpers (for smoothNav close) ------------- */
-function closeDrawer(){
-  const btn     = document.getElementById('hamburgerBtn');
-  const drawer  = document.getElementById('sideDrawer');
-  const overlay = document.getElementById('drawerOverlay');
-  if (!btn || !drawer || !overlay) return;
-  btn.setAttribute('aria-expanded','false');
-  drawer.classList.remove('is-open');
-  const onEnd = () => {
-    drawer.hidden = true;
-    overlay.hidden = true;
-    drawer.removeEventListener('transitionend', onEnd);
-  };
-  drawer.addEventListener('transitionend', onEnd);
 }
