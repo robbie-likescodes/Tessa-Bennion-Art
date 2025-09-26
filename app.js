@@ -172,30 +172,39 @@ function makeFlipStackCard(files) {
     apply();
   });
 
-  // horizontal swipe to flip
-  const drag = {down:false, x:0, y:0};
+  // horizontal swipe to flip (axis lock so vertical scroll still works)
+  const drag = {down:false, x:0, y:0, locked:null};
   wrap.addEventListener("pointerdown", e=>{
-    drag.down = true; drag.x = e.clientX; drag.y = e.clientY;
+    drag.down = true; drag.x = e.clientX; drag.y = e.clientY; drag.locked = null;
     wrap.setPointerCapture?.(e.pointerId);
   });
   wrap.addEventListener("pointermove", e=>{
     if(!drag.down) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 14) {
-      e.preventDefault(); // stop page scroll while flipping
-      const layersEls = wrap.querySelectorAll('.flipstack__item');
-      if (layersEls[head]) {
-        layersEls[head].style.transform = `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
+
+    // Lock axis after a small threshold
+    if (drag.locked == null) {
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+        drag.locked = (Math.abs(dx) > Math.abs(dy)) ? "x" : "y";
       }
+    }
+
+    // Only prevent default if the user is clearly swiping horizontally
+    if (drag.locked === "x") {
+      e.preventDefault();
+      const active = wrap.querySelectorAll('.flipstack__item')[head];
+      if (active) active.style.transform = `rotate(${dx*0.05}deg) translateX(${dx*0.1}px)`;
     }
   }, {passive:false});
   wrap.addEventListener("pointerup", e=>{
     if(!drag.down) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    const layersEls = wrap.querySelectorAll('.flipstack__item');
-    if (layersEls[head]) layersEls[head].style.transform = "";
-    drag.down = false;
+    const active = wrap.querySelectorAll('.flipstack__item')[head];
+    if (active) active.style.transform = "";
+    drag.down = false; drag.locked = null;
     wrap.releasePointerCapture?.(e.pointerId);
+
+    // Flip only on horizontal flicks
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
       head = (head + (dx < 0 ? 1 : ordered.length - 1)) % ordered.length;
       apply();
@@ -384,36 +393,6 @@ function profileLink(){
   on(prof, "click", () => about.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
-/* --------- Global scroll gating: only scroll when touch starts on art --------- */
-function gateScrollToArt() {
-  const ART_SELECTOR = ".card img, .card video, .flipstack, .flipstack__item, .flipstack__item img";
-  let locked = false;
-
-  const setScrollLocked = (lock) => {
-    if (locked === lock) return;
-    locked = lock;
-    const html = document.documentElement;
-    const body = document.body;
-    const val = lock ? "hidden" : "";
-    html.style.overflow = val;
-    body.style.overflow = val;
-    // helps on iOS
-    html.style.overscrollBehaviorY = lock ? "none" : "";
-    body.style.overscrollBehaviorY = lock ? "none" : "";
-  };
-
-  // decide at gesture start
-  document.addEventListener("touchstart", (e) => {
-    const onArt = !!e.target.closest(ART_SELECTOR);
-    setScrollLocked(!onArt); // lock when NOT starting on art
-  }, { passive: true });
-
-  // always unlock when gesture ends
-  const unlock = () => setScrollLocked(false);
-  document.addEventListener("touchend", unlock, { passive: true });
-  document.addEventListener("touchcancel", unlock, { passive: true });
-}
-
 /* --------------------------- Boot ------------------------------ */
 function boot() {
   renderGroupedRows("rows-life",        FILES.life);
@@ -427,7 +406,7 @@ function boot() {
   menuControls();
   introFlow();
   profileLink();
-  gateScrollToArt();
+  // NOTE: removed the global "gateScrollToArt" blocker.
 }
 
 document.addEventListener("DOMContentLoaded", boot);
