@@ -278,8 +278,12 @@ img, video{
   position:relative;
   overflow:hidden;
   perspective:900px;
-  /* NOTE: previously this was touch-action:none; that blocked scroll.
-     We now allow pan-y so vertical scroll works when starting on the stack. */
+  /* NOTE: we allow pan-y so vertical scroll works when starting on the stack. */
+
+  /* Stronger fan variables */
+  --peek-x: 14px;   /* horizontal corner peek */
+  --peek-y: 22px;   /* vertical drop */
+  --rot: 10deg;     /* rotation for the two rear cards */
 }
 
 .flipstack__item{
@@ -295,11 +299,40 @@ img, video{
   object-fit:cover; border-radius:16px;
 }
 
-/* Feathered positions (hint that it flips) */
-.flipstack__item[data-pos="0"]{ z-index:3; opacity:1;   transform:rotate(0) translateZ(0); }
-.flipstack__item[data-pos="1"]{ z-index:2; opacity:.92; transform:rotate(-6deg) scale(.985) translateY(6px)  translateX(-3px); filter:saturate(.95) brightness(.99); }
-.flipstack__item[data-pos="2"]{ z-index:1; opacity:.85; transform:rotate(6deg)  scale(.97)  translateY(12px) translateX( 3px); filter:saturate(.9)  brightness(.97); }
-.flipstack__item[data-pos="rest"]{ z-index:0; opacity:0; transform:scale(.95) translateY(18px); }
+/* Stronger feathered positions (clearer that it flips) */
+.flipstack__item[data-pos="0"]{
+  z-index:3; opacity:1; transform:rotate(0) translateZ(0);
+}
+.flipstack__item[data-pos="1"]{
+  z-index:2; opacity:.92;
+  transform: rotate(calc(var(--rot) * -1))
+             scale(.975)
+             translateY(var(--peek-y))
+             translateX(calc(var(--peek-x) * -1));
+  filter:saturate(.95) brightness(.99);
+}
+.flipstack__item[data-pos="2"]{
+  z-index:1; opacity:.86;
+  transform: rotate(var(--rot))
+             scale(.96)
+             translateY(calc(var(--peek-y) + 6px))
+             translateX(var(--peek-x));
+  filter:saturate(.9) brightness(.97);
+}
+.flipstack__item[data-pos="rest"]{
+  z-index:0; opacity:0; transform:scale(.95) translateY(18px);
+}
+
+/* Thin light rim so rear cards read as separate layers */
+.flipstack__item[data-pos="1"]::before,
+.flipstack__item[data-pos="2"]::before{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:16px;
+  box-shadow:0 0 0 3px rgba(255,255,255,.85);
+  mix-blend-mode:screen;
+  pointer-events:none;
+}
 
 .flipstack__badge{
   position:absolute; right:8px; top:8px;
@@ -310,6 +343,21 @@ img, video{
   font:600 .8rem/1 var(--font-sans);
   backdrop-filter:blur(2px);
   pointer-events:none;
+}
+
+/* Exaggerate the fan very briefly while the page is scrolling */
+body.stack-peek .flipstack__item[data-pos="1"]{
+  transform: rotate(calc(var(--rot) * -1.2))
+             scale(.96)
+             translateY(calc(var(--peek-y) + 6px))
+             translateX(calc(var(--peek-x) * -1.2));
+}
+body.stack-peek .flipstack__item[data-pos="2"]{
+  transform: rotate(calc(var(--rot) * 1.2))
+             scale(.955)
+             translateY(calc(var(--peek-y) + 10px))
+             translateX(calc(var(--peek-x) * 1.2));
+  opacity:.9;
 }
 
 /* ---------------- About ---------------- */
@@ -386,7 +434,7 @@ img, video{
 }
 #ap-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-/* While painting, lock page scroll (bg-painter toggles this class) */
+/* While painting, allow normal scrolling (we used to block it) */
 .ap-painting-active{ touch-action: auto; }
 
 /* ---------------- Utility ---------------- */
