@@ -145,10 +145,9 @@ img, video{
   border:0;
   padding:.125rem;
   cursor:pointer;
+   .avatar-btn{ justify-self: start;
 }
 
-.avatar-btn{ justify-self: start; }
-.burger{ justify-self: end; }
 
 .app-bar .profile{
   width:40px; height:40px;
@@ -187,6 +186,7 @@ text-align: center;       /* already present, fine to keep */
   border:0;
   padding:0;
   cursor:pointer;
+   .burger{ justify-self: end;
 }
 .burger__line{
   display:block;
