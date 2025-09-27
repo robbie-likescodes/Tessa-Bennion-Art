@@ -128,7 +128,7 @@ img, video{
   top:0;
   z-index:920;
   display:grid;
-  grid-template-columns:auto 1fr auto;  /* avatar | title | burger */
+  grid-template-columns:auto 1fr auto 1fr;  /* avatar | title | burger */
   align-items:center;
   gap:.75rem;
   padding:.5rem var(--pad);
@@ -146,6 +146,10 @@ img, video{
   padding:.125rem;
   cursor:pointer;
 }
+
+.avatar-btn{ justify-self: start; }
+.burger{ justify-self: end; }
+
 .app-bar .profile{
   width:40px; height:40px;
   border-radius:50%;
@@ -161,6 +165,10 @@ img, video{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+   grid-column: 2;           /* center cell */
+margin-inline: auto;      /* belt & suspenders centering */
+text-align: center;       /* already present, fine to keep */
+
 }
 
 /* Right: two-line hamburger */
