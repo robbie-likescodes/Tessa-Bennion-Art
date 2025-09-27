@@ -6,6 +6,7 @@
 /* ---------------- Tokens ---------------- */
 :root{
   --bg: burlywood; /* was #faf9f7 */
+   --appbar-h: 56px; /* height of the top app bar */
   --fg:#1c1c1c;
   --muted:#6b6b6b;
   --accent:#7b3f00;
@@ -122,6 +123,8 @@ img, video{
 /* App bar */
 .app-bar{
   position:sticky;
+   min-height: var(--appbar-h);
+
   top:0;
   z-index:920;
   display:grid;
@@ -196,26 +199,32 @@ img, video{
 }
 
 /* Drawer + overlay */
+
+.side-drawer:not([hidden]){ transform:translateX(0); }
 .side-drawer{
   position:fixed;
-  top:0; right:0;
+  top: var(--appbar-h);                 /* CHANGED (was 0) */
+  right:0;
   width:min(88vw, 340px);
-  height:100dvh;
+  height: calc(100dvh - var(--appbar-h)); /* CHANGED (was 100dvh) */
   background:rgba(255,255,255,.92);
   backdrop-filter:blur(10px);
   border-left:1px solid rgba(0,0,0,.08);
-  z-index:1002;
+  z-index:1002;                         /* keep if you like; app-bar stays above due to offset */
   transform:translateX(100%);
   transition:transform .28s ease;
 }
-.side-drawer:not([hidden]){ transform:translateX(0); }
 
 .drawer-overlay{
-  position:fixed; inset:0;
+  position:fixed;
+  left:0; right:0;
+  top: var(--appbar-h);                 /* CHANGED (was inset:0) */
+  bottom:0;
   background:rgba(0,0,0,.28);
   backdrop-filter:blur(2px);
   z-index:1001;
 }
+
 
 /* Drawer content */
 .drawer-inner{
