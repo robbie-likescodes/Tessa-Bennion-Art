@@ -6,7 +6,7 @@
 /* ---------------- Tokens ---------------- */
 :root{
   --bg: burlywood; /* was #faf9f7 */
-   --appbar-h: 56px; /* height of the top app bar */
+  --appbar-h: 56px; /* height of the top app bar */
   --fg:#1c1c1c;
   --muted:#6b6b6b;
   --accent:#7b3f00;
@@ -32,9 +32,8 @@ html, body{
   font-family:var(--font-serif);
   background:var(--bg);
   color:var(--fg);
-  overflow-x:hidden;                 /* never allow sideways pan */
-  /* allow normal vertical scrolling */
-  touch-action:auto;
+  overflow-x:hidden; /* never allow sideways pan */
+  touch-action:auto; /* allow normal vertical scrolling */
 }
 
 img, video{
@@ -63,7 +62,7 @@ img, video{
   height:100%;
   object-fit:cover;
   opacity:1;
-  z-index:1;                          /* video sits below overlay */
+  z-index:1; /* video sits below overlay */
 }
 
 /* soft vignette so white text always reads */
@@ -81,7 +80,7 @@ img, video{
   display:grid;
   place-items:center;
   z-index:3;
-  pointer-events:none;                /* overlay doesn't block Skip */
+  pointer-events:none; /* overlay doesn't block Skip */
 }
 
 .brand-script{
@@ -109,10 +108,10 @@ img, video{
 
 .intro.fade-video .intro-video{
   opacity:0;
-  transition:opacity .7s ease;        /* Stage 1: video → black */
+  transition:opacity .7s ease; /* Stage 1: video → black */
 }
 .intro.fade-overlay{
-  opacity:0;                          /* Stage 2: overlay → gone */
+  opacity:0; /* Stage 2: overlay → gone */
   pointer-events:none;
 }
 
@@ -123,15 +122,14 @@ img, video{
 /* App bar */
 .app-bar{
   position:sticky;
-   min-height: var(--appbar-h);
-
   top:0;
   z-index:920;
   display:grid;
-  grid-template-columns:1fr auto 1fr;  /* avatar | title | burger */
+  grid-template-columns:auto 1fr auto;  /* avatar | title | burger */
   align-items:center;
   gap:.75rem;
   padding:.5rem var(--pad);
+  min-height:var(--appbar-h);
   background:rgba(250,249,247,.9);
   backdrop-filter:blur(6px);
   border-bottom:1px solid rgba(0,0,0,.08);
@@ -145,10 +143,8 @@ img, video{
   border:0;
   padding:.125rem;
   cursor:pointer;
-   .avatar-btn{ justify-self: start;
+  justify-self:start;                 /* stick left */
 }
-
-
 .app-bar .profile{
   width:40px; height:40px;
   border-radius:50%;
@@ -159,15 +155,13 @@ img, video{
 .brand-title{
   margin:0;
   font:600 1.15rem/1.1 var(--font-serif);
-  text-align:center;
   letter-spacing:.02em;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-   grid-column: 2;           /* center cell */
-margin-inline: auto;      /* belt & suspenders centering */
-text-align: center;       /* already present, fine to keep */
-
+  grid-column:2;                      /* force center column */
+  margin-inline:auto;                 /* center within column */
+  text-align:center;
 }
 
 /* Right: two-line hamburger */
@@ -177,7 +171,7 @@ text-align: center;       /* already present, fine to keep */
   --gap: 6px;
 
   position:relative;
-  width:calc(var(--line-w));
+  width:var(--line-w);
   height:calc(var(--line-h)*2 + var(--gap));
   display:inline-grid;
   align-content:center;
@@ -186,7 +180,7 @@ text-align: center;       /* already present, fine to keep */
   border:0;
   padding:0;
   cursor:pointer;
-   .burger{ justify-self: end;
+  justify-self:end;                   /* stick right */
 }
 .burger__line{
   display:block;
@@ -207,32 +201,30 @@ text-align: center;       /* already present, fine to keep */
 }
 
 /* Drawer + overlay */
-
-.side-drawer:not([hidden]){ transform:translateX(0); }
 .side-drawer{
   position:fixed;
-  top: var(--appbar-h);                 /* CHANGED (was 0) */
+  top:var(--appbar-h);                      /* sit below the app bar */
   right:0;
   width:min(88vw, 340px);
-  height: calc(100dvh - var(--appbar-h)); /* CHANGED (was 100dvh) */
+  height:calc(100dvh - var(--appbar-h));
   background:rgba(255,255,255,.92);
   backdrop-filter:blur(10px);
   border-left:1px solid rgba(0,0,0,.08);
-  z-index:1002;                         /* keep if you like; app-bar stays above due to offset */
+  z-index:1002;
   transform:translateX(100%);
   transition:transform .28s ease;
 }
+.side-drawer:not([hidden]){ transform:translateX(0); }
 
 .drawer-overlay{
   position:fixed;
   left:0; right:0;
-  top: var(--appbar-h);                 /* CHANGED (was inset:0) */
+  top:var(--appbar-h);                      /* do not cover the app bar */
   bottom:0;
   background:rgba(0,0,0,.28);
   backdrop-filter:blur(2px);
   z-index:1001;
 }
-
 
 /* Drawer content */
 .drawer-inner{
@@ -287,7 +279,6 @@ text-align: center;       /* already present, fine to keep */
 /* Legacy header/menu styles (kept for compatibility with old markup)   */
 /* ==================================================================== */
 
-/* ---------------- Header ---------------- */
 .site-header{
   position:sticky;
   top:0;
@@ -301,14 +292,12 @@ text-align: center;       /* already present, fine to keep */
   border-bottom:1px solid rgba(0,0,0,.08);
 }
 
-/* Center the Menu text absolutely within the header */
 .site-header .menu-trigger{
   position:absolute;
   left:50%;
   transform:translateX(-50%);
 }
 
-/* Bigger, black Menu label */
 #menuTrigger,
 .menu-trigger{
   background:none;
@@ -319,7 +308,6 @@ text-align: center;       /* already present, fine to keep */
   cursor:pointer;
 }
 
-/* right-side icons align right naturally via flex spacing */
 #ap-palette-mount{ display:inline-flex; margin-left:.5rem; }
 .profile{
   width:40px; height:40px;
@@ -361,7 +349,7 @@ text-align: center;       /* already present, fine to keep */
 .section{
   padding:2rem var(--pad);
   max-width:var(--maxw);
-  margin:0 auto;
+  margin:0 auto; /* center the main feed */
 }
 .section-title{
   font-family:var(--font-serif);
@@ -427,7 +415,7 @@ text-align: center;       /* already present, fine to keep */
 /* Allow vertical scroll when gesture starts on art */
 .card, .card a, .card a.lb, .card img, .card video,
 .flipstack, .flipstack__item, .flipstack__item img{
-  touch-action: pan-y;
+  touch-action: pan-y; /* UA handles vertical scroll; JS only takes horizontal flip */
 }
 
 /* Keep video cards consistent */
@@ -448,7 +436,7 @@ text-align: center;       /* already present, fine to keep */
   width:min(92vw, 560px);
   aspect-ratio:4/5;
   margin:0 auto;
-  border-radius: 0;
+  border-radius:0;
   position:relative;
   overflow:hidden;
   perspective:900px;
@@ -651,7 +639,8 @@ body.stack-peek .flipstack__item[data-pos="2"]{
 }
 .ap-palette svg{ width:100%; height:100%; display:block; }
 #ap-toast{
-  position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom,0px) + 70px);
+  position:fixed; left:50%;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 70px);
   transform:translateX(-50%) translateY(20px);
   background:rgba(0,0,0,.7); color:#fff;
   padding:.5rem .8rem; border-radius:.5rem;
