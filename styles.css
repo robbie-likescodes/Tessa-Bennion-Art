@@ -128,7 +128,7 @@ img, video{
   top:0;
   z-index:920;
   display:grid;
-  grid-template-columns:auto 1fr auto 1fr;  /* avatar | title | burger */
+  grid-template-columns:1fr auto 1fr;  /* avatar | title | burger */
   align-items:center;
   gap:.75rem;
   padding:.5rem var(--pad);
