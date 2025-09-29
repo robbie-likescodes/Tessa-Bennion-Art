@@ -1,18 +1,19 @@
 /* =========================================================
    Tessa Bennion — app.js (intro 6s hold → two-stage fade,
    menu autoclose, profile→about, modern app-bar drawer)
+   + Title-centering failsafe + parallax shadows
 ========================================================= */
 
 /* ------------ List your files (exact names) ------------ */
 const FILES = {
   life: [
-    "LifeA1.jpeg", 
+    "LifeA1.jpeg",
     "LifeB1.jpeg", "LifeB2.jpeg", "LifeB3.jpeg",
-    "LifeC1.jpeg", 
+    "LifeC1.jpeg",
   ],
   portrait: [
     "PortraitA1.JPEG",
-    "PortraitB1.jpeg", 
+    "PortraitB1.jpeg",
     "PortraitC1.jpeg", "PortraitD1.jpeg", "PortraitE1.jpeg",
     "PortraitF1.jpeg", "PortraitG1.jpeg", "PortraitH1.jpeg"
   ],
@@ -83,6 +84,12 @@ function humanizeFilename(file) {
 function makeImageCard(src, caption = "") {
   const fig = document.createElement("figure");
   fig.className = "card";
+
+  // parallax shadow layer (behind the media)
+  const sh = document.createElement("div");
+  sh.className = "parallax-shadow";
+  fig.appendChild(sh);
+
   const a = document.createElement("a");
   a.href = BASE + src;
   a.className = "lb";
@@ -101,6 +108,11 @@ function makeVideoCard(src) {
   const fig = document.createElement("figure");
   fig.className = "card";
 
+  // parallax shadow layer
+  const sh = document.createElement("div");
+  sh.className = "parallax-shadow";
+  fig.appendChild(sh);
+
   const v = document.createElement("video");
   v.src = BASE + src;
   v.playsInline = true;
@@ -109,12 +121,10 @@ function makeVideoCard(src) {
   v.controls = false;                 // preview mode (no big play overlay)
   v.setAttribute("disablepictureinpicture", "");
 
-  // show an early frame so it looks like a thumbnail
   v.addEventListener("loadedmetadata", () => {
     try { v.currentTime = Math.min(0.1, v.duration || 0.1); } catch {}
   }, { once: true });
 
-  // on tap: enable controls and play
   v.addEventListener("click", () => {
     if (!v.controls) v.controls = true;
     v.play().catch(()=>{});
@@ -140,6 +150,12 @@ function makeFlipStackCard(files) {
     const item = document.createElement("div");
     item.className = "flipstack__item";
     item.dataset.pos = i===0 ? "0" : i===1 ? "1" : i===2 ? "2" : "rest";
+
+    // shadow behind each image in the stack
+    const sh = document.createElement("div");
+    sh.className = "parallax-shadow";
+    item.appendChild(sh);
+
     const img = document.createElement("img");
     img.loading = "lazy";
     img.decoding = "async";
@@ -150,7 +166,7 @@ function makeFlipStackCard(files) {
     return item;
   });
 
-  // classy pager dots (instead of numeric badge)
+  // classy pager dots
   let dots = [];
   let dotsWrap = null;
   if (ordered.length > 1) {
@@ -311,7 +327,7 @@ function smoothNav() {
     })
   );
 
-  // UPDATED: choose the section centered in the viewport
+  // choose the section centered in the viewport
   const updateActive = (id) => {
     allLinks.forEach(link =>
       link.classList.toggle("active", link.getAttribute("href") === id)
@@ -337,7 +353,6 @@ function smoothNav() {
     }
   }, {
     root: null,
-    // a tight middle band prevents the next section from stealing focus
     rootMargin: "-45% 0px -45% 0px",
     threshold: [0.01, 0.25, 0.5, 0.75, 1]
   });
@@ -523,6 +538,124 @@ function hintStacksWhileScrolling(){
   }, { passive: true });
 }
 
+/* ---------------- Title centering failsafe (balanced rails) --------------- */
+function balanceAppBar(){
+  const bar    = $(".app-bar");
+  const left   = $(".avatar-btn");
+  const right  = $(".burger");
+  if (!bar || !left || !right) return;
+
+  const apply = () => {
+    const rail = Math.max(left.offsetWidth || 44, right.offsetWidth || 44);
+    // lock symmetric rails so the title stays centered
+    bar.style.gridTemplateColumns = `${rail}px 1fr ${rail}px`;
+  };
+
+  apply();
+  // Re-run when fonts load, icons swap, or window resizes
+  window.addEventListener("resize", apply, { passive: true });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(apply).catch(()=>{});
+  }
+  new ResizeObserver(apply).observe(left);
+  new ResizeObserver(apply).observe(right);
+}
+
+/* ---------------- Parallax “living” shadows ------------------- */
+function injectShadowCSS(){
+  if (document.getElementById("parallax-shadow-css")) return;
+  const style = document.createElement("style");
+  style.id = "parallax-shadow-css";
+  style.textContent = `
+    .card{ position:relative; }
+    .card img, .card video{ position:relative; z-index:1; }
+    .parallax-shadow{
+      position:absolute; inset:8px; z-index:0;
+      border-radius:2px;
+      background:rgba(0,0,0,.18);
+      filter: blur(14px);
+      transform: translate3d(var(--tiltX,0px), var(--tiltY,0px), 0) scale(.98);
+      transition: transform .08s linear, opacity .15s ease;
+      pointer-events:none;
+    }
+    /* gentle hover for desktops */
+    .card:hover .parallax-shadow{ opacity:1; }
+  `;
+  document.head.appendChild(style);
+}
+
+function parallaxShadows(){
+  injectShadowCSS();
+
+  // per-card pointer parallax
+  const bindPointer = (card) => {
+    const sh = card.querySelector(".parallax-shadow");
+    if (!sh) return;
+    let raf = null;
+    const upd = (x,y) => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(()=>{
+        const rect = card.getBoundingClientRect();
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top  + rect.height/2;
+        const dx = (x - cx) / rect.width;   // -0.5..0.5
+        const dy = (y - cy) / rect.height;  // -0.5..0.5
+        const max = 12; // px
+        card.style.setProperty("--tiltX", `${dx * max}px`);
+        card.style.setProperty("--tiltY", `${dy * max}px`);
+      });
+    };
+    card.addEventListener("pointermove", (e)=>upd(e.clientX, e.clientY));
+    card.addEventListener("pointerleave", ()=>{
+      card.style.setProperty("--tiltX","0px");
+      card.style.setProperty("--tiltY","0px");
+    });
+  };
+
+  $$(".card").forEach(bindPointer);
+
+  // Device tilt (optional; requires permission on iOS)
+  const tryMotion = async () => {
+    const needsPerm = typeof DeviceMotionEvent !== "undefined" &&
+                      typeof DeviceMotionEvent.requestPermission === "function";
+    try{
+      if (needsPerm) {
+        // Ask after a user gesture (first tap anywhere)
+        const ask = () => {
+          DeviceMotionEvent.requestPermission().then(state=>{
+            if (state === "granted") startMotion();
+          }).catch(()=>{});
+          document.removeEventListener("touchend", ask);
+          document.removeEventListener("click", ask);
+        };
+        document.addEventListener("touchend", ask, { once:true });
+        document.addEventListener("click", ask, { once:true });
+      } else {
+        startMotion();
+      }
+    }catch{}
+  };
+
+  function startMotion(){
+    let raf = null, gx = 0, gy = 0;
+    window.addEventListener("deviceorientation", (e)=>{
+      // gamma: left/right (-90..90), beta: front/back (-180..180)
+      const max = 10; // px
+      gx = (e.gamma || 0) / 45 * max; // normalize
+      gy = (e.beta  || 0) / 45 * max;
+      if (!raf) raf = requestAnimationFrame(()=>{
+        raf = null;
+        document.querySelectorAll(".card").forEach(card=>{
+          card.style.setProperty("--tiltX", `${gx}px`);
+          card.style.setProperty("--tiltY", `${gy}px`);
+        });
+      });
+    });
+  }
+
+  tryMotion();
+}
+
 /* --------------------------- Boot ------------------------------ */
 function boot() {
   renderGroupedRows("rows-portrait",    FILES.portrait);
@@ -541,6 +674,9 @@ function boot() {
   profileLink();
   gateScrollToArt();
   hintStacksWhileScrolling();
+
+  balanceAppBar();      // NEW
+  parallaxShadows();    // NEW
 }
 
 document.addEventListener("DOMContentLoaded", boot);
