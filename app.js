@@ -561,7 +561,7 @@ function balanceAppBar(){
   new ResizeObserver(apply).observe(right);
 }
 
-/* ---------------- Parallax “living” shadows ------------------- */
+/* ---------------- Parallax “living” shadows (no device permission) -------- */
 function injectShadowCSS(){
   if (document.getElementById("parallax-shadow-css")) return;
   const style = document.createElement("style");
@@ -572,10 +572,10 @@ function injectShadowCSS(){
     .parallax-shadow{
       position:absolute; inset:8px; z-index:0;
       border-radius:2px;
-      background:rgba(0,0,0,.18);
-      filter: blur(14px);
-      transform: translate3d(var(--tiltX,0px), var(--tiltY,0px), 0) scale(.98);
-      transition: transform .08s linear, opacity .15s ease;
+      background:rgba(0,0,0,.20);          /* slightly stronger */
+      filter: blur(16px);                   /* slightly bigger */
+      transform: translate3d(var(--tiltX,0px), var(--tiltY,0px), 0) scale(.97);
+      transition: transform .10s linear, opacity .15s ease;
       pointer-events:none;
     }
     /* gentle hover for desktops */
@@ -587,7 +587,7 @@ function injectShadowCSS(){
 function parallaxShadows(){
   injectShadowCSS();
 
-  // per-card pointer parallax
+  // per-card pointer parallax (desktop feel)
   const bindPointer = (card) => {
     const sh = card.querySelector(".parallax-shadow");
     if (!sh) return;
@@ -600,7 +600,7 @@ function parallaxShadows(){
         const cy = rect.top  + rect.height/2;
         const dx = (x - cx) / rect.width;   // -0.5..0.5
         const dy = (y - cy) / rect.height;  // -0.5..0.5
-        const max = 12; // px
+        const max = 16;                      // slightly larger range
         card.style.setProperty("--tiltX", `${dx * max}px`);
         card.style.setProperty("--tiltY", `${dy * max}px`);
       });
@@ -614,46 +614,23 @@ function parallaxShadows(){
 
   $$(".card").forEach(bindPointer);
 
-  // Device tilt (optional; requires permission on iOS)
-  const tryMotion = async () => {
-    const needsPerm = typeof DeviceMotionEvent !== "undefined" &&
-                      typeof DeviceMotionEvent.requestPermission === "function";
-    try{
-      if (needsPerm) {
-        // Ask after a user gesture (first tap anywhere)
-        const ask = () => {
-          DeviceMotionEvent.requestPermission().then(state=>{
-            if (state === "granted") startMotion();
-          }).catch(()=>{});
-          document.removeEventListener("touchend", ask);
-          document.removeEventListener("click", ask);
-        };
-        document.addEventListener("touchend", ask, { once:true });
-        document.addEventListener("click", ask, { once:true });
-      } else {
-        startMotion();
-      }
-    }catch{}
-  };
-
-  function startMotion(){
-    let raf = null, gx = 0, gy = 0;
-    window.addEventListener("deviceorientation", (e)=>{
-      // gamma: left/right (-90..90), beta: front/back (-180..180)
-      const max = 10; // px
-      gx = (e.gamma || 0) / 45 * max; // normalize
-      gy = (e.beta  || 0) / 45 * max;
-      if (!raf) raf = requestAnimationFrame(()=>{
-        raf = null;
-        document.querySelectorAll(".card").forEach(card=>{
-          card.style.setProperty("--tiltX", `${gx}px`);
-          card.style.setProperty("--tiltY", `${gy}px`);
-        });
+  // subtle global scroll drift (no permissions needed)
+  let raf = null;
+  const onScroll = () => {
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(()=>{
+      const y = window.scrollY || 0;
+      // tiny oscillation within a few pixels
+      const shiftX = ((y % 100) / 100 - 0.5) * 8;  // -4..+4 px
+      const shiftY = ((y % 140) / 140 - 0.5) * 8;  // -4..+4 px
+      document.querySelectorAll(".card").forEach(card=>{
+        card.style.setProperty("--tiltX", `${shiftX}px`);
+        card.style.setProperty("--tiltY", `${shiftY}px`);
       });
     });
-  }
-
-  tryMotion();
+  };
+  window.addEventListener("scroll", onScroll, { passive:true });
+  onScroll(); // initial
 }
 
 /* --------------------------- Boot ------------------------------ */
@@ -675,8 +652,8 @@ function boot() {
   gateScrollToArt();
   hintStacksWhileScrolling();
 
-  balanceAppBar();      // NEW
-  parallaxShadows();    // NEW
+  balanceAppBar();      // keep title perfectly centered
+  parallaxShadows();    // new: pointer + scroll drifting shadow
 }
 
 document.addEventListener("DOMContentLoaded", boot);
