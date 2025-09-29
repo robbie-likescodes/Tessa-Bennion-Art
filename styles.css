@@ -13,6 +13,10 @@
   --maxw:1100px;
   --pad:clamp(.75rem,2vw,1.25rem);
 
+  /* new: parchment-tinted bar backgrounds */
+  --bar-tint-1: rgba(250,245,236,.92);
+  --bar-tint-2: rgba(250,245,236,.86);
+
   --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
   --font-serif:"EB Garamond",Georgia,serif;
   --font-script:"Great Vibes",cursive;
@@ -138,7 +142,7 @@ img, video{
   gap:.75rem;
   padding:.5rem var(--pad);
   min-height:var(--appbar-h);
-  background:rgba(250,249,247,.9);
+  background:linear-gradient(180deg, var(--bar-tint-1), var(--bar-tint-2)); /* non-white */
   backdrop-filter:blur(6px);
   border-bottom:1px solid rgba(120,72,24,.18);
   box-shadow:
@@ -146,10 +150,17 @@ img, video{
     0 8px 20px rgba(0,0,0,.06);
 }
 
+/* Equal rail hit-areas = perfect title centering */
+.avatar-btn,
+.burger{
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+}
+
 /* Left: avatar button (navigates to About) */
 .avatar-btn{
-  display:inline-grid;
-  place-items:center;
   background:none;
   border:0;
   padding:.125rem;
@@ -182,9 +193,8 @@ img, video{
   --gap: 6px;
 
   position:relative;
-  width:var(--line-w);
-  height:calc(var(--line-h)*2 + var(--gap));
-  display:inline-grid;
+  width:44px;                         /* container width (lines keep their own width) */
+  height:44px;
   align-content:center;
   gap:var(--gap);
   background:none;
@@ -298,7 +308,7 @@ img, video{
   align-items:center;
   justify-content:space-between;
   padding:.5rem var(--pad);
-  background:rgba(250,249,247,.9);
+  background:linear-gradient(180deg, var(--bar-tint-1), var(--bar-tint-2));
   backdrop-filter:blur(6px);
   border-bottom:1px solid rgba(0,0,0,.08);
 }
@@ -452,8 +462,8 @@ a:hover{ color: var(--accent); }
 .card video{
   width:100%;
   border-radius:0;
-  border:1px solid rgba(120,72,24,.18);          /* new: fine rim */
-  box-shadow:0 2px 10px rgba(0,0,0,.12);         /* new: subtle lift */
+  border:1px solid rgba(120,72,24,.18);          /* fine rim */
+  box-shadow:0 2px 10px rgba(0,0,0,.12);         /* subtle lift */
   object-fit:cover;
 }
 
@@ -466,7 +476,7 @@ a:hover{ color: var(--accent); }
 /* Keep video cards consistent */
 .card video{
   aspect-ratio:16/9;
-  border:1px solid rgba(120,72,24,.18);          /* match image rim */
+  border:1px solid rgba(120,72,24,.18);
   background:#000;
 }
 
@@ -502,7 +512,7 @@ a:hover{ color: var(--accent); }
 .flipstack__item img{
   width:100%; height:100%;
   object-fit:cover; border-radius:0;
-  border:1px solid rgba(120,72,24,.18);         /* match rim */
+  border:1px solid rgba(120,72,24,.18);
 }
 
 .flipstack__item[data-pos="0"]{
@@ -611,18 +621,6 @@ body.stack-peek .flipstack__item[data-pos="2"]{
   text-align:center;
 }
 
-/* Optional classy drop cap on first paragraph
-#about .about-copy p:first-of-type::first-letter{
-  float:left;
-  font-size:2.6em;
-  line-height: .9;
-  padding-right:.12em;
-  margin-top:.04em;
-  color: var(--accent);
-  font-weight:600;
-}
-*/
-
 /* ---------------- Contact ---------------- */
 #contact p{ font-size:1.05rem; text-align:center; }
 #contact a{
@@ -659,7 +657,7 @@ body.stack-peek .flipstack__item[data-pos="2"]{
 .bottom-dock{
   position:fixed;
   bottom:0; left:0; right:0;
-  background:rgba(250,249,247,.95);
+  background:linear-gradient(0deg, var(--bar-tint-1), var(--bar-tint-2)); /* non-white */
   display:flex;
   justify-content:space-around;
   padding:.5rem 0;
@@ -740,7 +738,6 @@ body.stack-peek .flipstack__item[data-pos="2"]{
 }
 
 /* ---------------- Panels for About & Contact ---------------- */
-/* (applied via ID selectors so you don't need to change HTML) */
 #about.section, #contact.section{
   background:#f7f3ed;
   border:1px solid rgba(120,72,24,.22);
