@@ -99,6 +99,11 @@ function makeImageCard(src, caption = "") {
   img.decoding = "async";
   img.src = BASE + src;
   img.alt = caption || humanizeFilename(src);
+  if (img.complete) {
+    img.classList.add("is-loaded");
+  } else {
+    img.addEventListener("load", () => img.classList.add("is-loaded"), { once: true });
+  }
   a.appendChild(img);
   fig.appendChild(a);
   return fig;
@@ -157,10 +162,19 @@ function makeFlipStackCard(files) {
     item.appendChild(sh);
 
     const img = document.createElement("img");
-    img.loading = "lazy";
+    img.loading = i === 0 ? "eager" : "lazy";
     img.decoding = "async";
     img.src = BASE + f;
     img.alt = humanizeFilename(f);
+    if (img.complete) {
+      img.classList.add("is-loaded");
+      if (i === 0) wrap.classList.add("is-ready");
+    } else {
+      img.addEventListener("load", () => {
+        img.classList.add("is-loaded");
+        if (i === 0) wrap.classList.add("is-ready");
+      }, { once: true });
+    }
     item.appendChild(img);
     wrap.appendChild(item);
     return item;
@@ -255,33 +269,49 @@ function renderGroupedRows(mountId, fileList) {
     return;
   }
 
-  const frag = document.createDocumentFragment();
+  const batchSize = 2;
+  let index = 0;
 
-  collections.forEach(([key, files]) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "stack-row";
+  const renderBatch = () => {
+    const frag = document.createDocumentFragment();
 
-    const allImgs = files.every(isImage);
-    const anyVid  = files.some(isVideo);
+    for (let i = 0; i < batchSize && index < collections.length; i += 1, index += 1) {
+      const [, files] = collections[index];
+      const wrapper = document.createElement("div");
+      wrapper.className = "stack-row";
 
-    if (allImgs && files.length >= 1) {
-      wrapper.appendChild(makeFlipStackCard(files)); // iMessage-like stack
-    } else if (anyVid) {
-      const row = document.createElement("div");
-      row.className = "row";
-      files.forEach(f => {
-        if (isVideo(f)) row.appendChild(makeVideoCard(f));
-        else row.appendChild(makeImageCard(f));
-      });
-      wrapper.appendChild(row);
-    } else {
-      wrapper.appendChild(makeImageCard(files[0]));
+      const allImgs = files.every(isImage);
+      const anyVid  = files.some(isVideo);
+
+      if (allImgs && files.length >= 1) {
+        wrapper.appendChild(makeFlipStackCard(files)); // iMessage-like stack
+      } else if (anyVid) {
+        const row = document.createElement("div");
+        row.className = "row";
+        files.forEach(f => {
+          if (isVideo(f)) row.appendChild(makeVideoCard(f));
+          else row.appendChild(makeImageCard(f));
+        });
+        wrapper.appendChild(row);
+      } else {
+        wrapper.appendChild(makeImageCard(files[0]));
+      }
+
+      frag.appendChild(wrapper);
     }
 
-    frag.appendChild(wrapper);
-  });
+    mount.appendChild(frag);
 
-  mount.appendChild(frag);
+    if (index < collections.length) {
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(renderBatch, { timeout: 200 });
+      } else {
+        setTimeout(renderBatch, 16);
+      }
+    }
+  };
+
+  renderBatch();
 }
 
 /* --------------------------- Lightbox -------------------------- */
@@ -313,7 +343,8 @@ function smoothNav() {
   const dockLinks   = $$(".bottom-dock a");
   const menuLinks   = $$(".menu-dropdown a");
   const drawerLinks = $$(".drawer-links a");   // NEW: app-bar drawer links
-  const allLinks    = [...dockLinks, ...menuLinks, ...drawerLinks];
+  const desktopLinks = $$(".desktop-nav a");
+  const allLinks    = [...dockLinks, ...menuLinks, ...drawerLinks, ...desktopLinks];
 
   allLinks.forEach(a =>
     on(a, "click", (e) => {
@@ -437,6 +468,11 @@ function introFlow() {
   const skip  = $("#skipIntro");
   if (!intro || !vid) return;
 
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    intro.remove();
+    return;
+  }
+
   vid.muted = true;
   vid.autoplay = true;
   vid.playsInline = true;
@@ -530,6 +566,9 @@ function gateScrollToArt() {
 
 /* --------- Briefly exaggerate the fan while scrolling (CSS hook) --------- */
 function hintStacksWhileScrolling(){
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
   let t;
   window.addEventListener('scroll', () => {
     document.body.classList.add('stack-peek');
@@ -546,6 +585,10 @@ function balanceAppBar(){
   if (!bar || !left || !right) return;
 
   const apply = () => {
+    if (window.matchMedia && window.matchMedia("(min-width: 1024px)").matches) {
+      bar.style.gridTemplateColumns = "";
+      return;
+    }
     const rail = Math.max(left.offsetWidth || 44, right.offsetWidth || 44);
     // lock symmetric rails so the title stays centered
     bar.style.gridTemplateColumns = `${rail}px 1fr ${rail}px`;
@@ -585,6 +628,9 @@ function injectShadowCSS(){
 }
 
 function parallaxShadows(){
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
   injectShadowCSS();
 
   // per-card pointer parallax (desktop feel)
