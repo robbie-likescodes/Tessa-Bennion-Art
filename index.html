@@ -89,7 +89,31 @@
   <div id="drawerOverlay" class="drawer-overlay" hidden></div>
 
   <!-- ===================== Main Content ===================== -->
-  <main id="main" tabindex="-1">
+  <div class="desktop-shell">
+    <aside class="desktop-sidebar" aria-label="Gallery navigation">
+      <details class="sidebar-group" open>
+        <summary>Gallery</summary>
+        <ul class="sidebar-links">
+          <li><a href="#portrait">Portrait</a></li>
+          <li><a href="#still">Still Life</a></li>
+          <li><a href="#life">Life</a></li>
+          <li><a href="#exhibitions">Exhibitions</a></li>
+          <li><a href="#sketches">Sketches</a></li>
+        </ul>
+      </details>
+      <details class="sidebar-group">
+        <summary>More</summary>
+        <ul class="sidebar-links">
+          <li><a href="#about">About Me</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </details>
+      <button id="densityToggle" class="density-toggle" type="button" aria-pressed="false">
+        Density: Comfortable
+      </button>
+    </aside>
+
+    <main id="main" tabindex="-1">
 
     <!-- PORTRAIT -->
     <section id="portrait" class="section" data-io aria-labelledby="portrait-title">
@@ -158,7 +182,8 @@
       </div>
     </section>
 
-  </main>
+    </main>
+  </div>
 
   <!-- ===================== Bottom Dock (thumb-reachable nav) ===================== -->
   <nav class="bottom-dock" aria-label="Quick Sections">

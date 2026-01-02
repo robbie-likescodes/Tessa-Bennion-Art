@@ -679,6 +679,27 @@ function parallaxShadows(){
   onScroll(); // initial
 }
 
+/* ---------------- Desktop density toggle ---------------- */
+function initDensityToggle(){
+  const toggle = document.getElementById("densityToggle");
+  if (!toggle) return;
+
+  const apply = (compact) => {
+    document.body.classList.toggle("density-compact", compact);
+    toggle.setAttribute("aria-pressed", String(compact));
+    toggle.textContent = compact ? "Density: Dense" : "Density: Comfortable";
+  };
+
+  const saved = localStorage.getItem("desktop-density");
+  apply(saved === "dense");
+
+  toggle.addEventListener("click", () => {
+    const isCompact = !document.body.classList.contains("density-compact");
+    apply(isCompact);
+    localStorage.setItem("desktop-density", isCompact ? "dense" : "comfortable");
+  });
+}
+
 /* --------------------------- Boot ------------------------------ */
 function boot() {
   renderGroupedRows("rows-portrait",    FILES.portrait);
@@ -700,6 +721,7 @@ function boot() {
 
   balanceAppBar();      // keep title perfectly centered
   parallaxShadows();    // new: pointer + scroll drifting shadow
+  initDensityToggle();
 }
 
 document.addEventListener("DOMContentLoaded", boot);
