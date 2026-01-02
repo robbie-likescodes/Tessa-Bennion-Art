@@ -372,6 +372,8 @@ img, video{
   max-width:var(--maxw);
   margin:0 auto; /* center the main feed */
   position: relative; /* for separators */
+  content-visibility:auto;
+  contain-intrinsic-size:600px;
 }
 .section + .section{
   margin-top: 1.25rem;
@@ -735,6 +737,19 @@ body.stack-peek .flipstack__item[data-pos="2"]{
 :focus-visible{
   outline:2px solid rgba(0,0,0,.35);
   outline-offset:3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro{
+    transition:none;
+  }
+  .intro.fade-video .intro-video{
+    transition:none;
+  }
+  .flipstack__item,
+  .flipstack__dot{
+    transition:none;
+  }
 }
 
 /* ---------------- Panels for About & Contact ---------------- */

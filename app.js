@@ -437,6 +437,11 @@ function introFlow() {
   const skip  = $("#skipIntro");
   if (!intro || !vid) return;
 
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    intro.remove();
+    return;
+  }
+
   vid.muted = true;
   vid.autoplay = true;
   vid.playsInline = true;
@@ -530,6 +535,9 @@ function gateScrollToArt() {
 
 /* --------- Briefly exaggerate the fan while scrolling (CSS hook) --------- */
 function hintStacksWhileScrolling(){
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
   let t;
   window.addEventListener('scroll', () => {
     document.body.classList.add('stack-peek');
@@ -585,6 +593,9 @@ function injectShadowCSS(){
 }
 
 function parallaxShadows(){
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
   injectShadowCSS();
 
   // per-card pointer parallax (desktop feel)
