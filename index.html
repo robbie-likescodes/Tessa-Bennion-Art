@@ -28,7 +28,7 @@
        muted
        playsinline
        webkit-playsinline
-       preload="auto">
+       preload="metadata">
   <source src="uploads/VidA1.mp4" type="video/mp4" />
     </video>
     <div class="intro-overlay" aria-hidden="true">
@@ -39,9 +39,18 @@
 
   <!-- ===================== Header (modern app bar) ===================== -->
   <header class="app-bar" role="banner">
+    <!-- Desktop nav (desktop-only) -->
+    <nav class="desktop-nav" aria-label="Primary">
+      <a href="#portrait">Portrait</a>
+      <a href="#still">Still Life</a>
+      <a href="#life">Life</a>
+      <a href="#exhibitions">Exhibitions</a>
+      <a href="#sketches">Sketches</a>
+    </nav>
+
     <!-- Left: profile (tap → About) -->
     <button id="profileBtn" class="avatar-btn" aria-label="Go to About">
-      <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" />
+      <img src="uploads/ProfileA1.JPG" alt="Tessa Bennion profile" class="profile" width="40" height="40" decoding="async" loading="eager" fetchpriority="high" />
     </button>
 
     <!-- Center: brand title -->
@@ -80,7 +89,31 @@
   <div id="drawerOverlay" class="drawer-overlay" hidden></div>
 
   <!-- ===================== Main Content ===================== -->
-  <main id="main" tabindex="-1">
+  <div class="desktop-shell">
+    <aside class="desktop-sidebar" aria-label="Gallery navigation">
+      <details class="sidebar-group" open>
+        <summary>Gallery</summary>
+        <ul class="sidebar-links">
+          <li><a href="#portrait">Portrait</a></li>
+          <li><a href="#still">Still Life</a></li>
+          <li><a href="#life">Life</a></li>
+          <li><a href="#exhibitions">Exhibitions</a></li>
+          <li><a href="#sketches">Sketches</a></li>
+        </ul>
+      </details>
+      <details class="sidebar-group">
+        <summary>More</summary>
+        <ul class="sidebar-links">
+          <li><a href="#about">About Me</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </details>
+      <button id="densityToggle" class="density-toggle" type="button" aria-pressed="false">
+        Density: Comfortable
+      </button>
+    </aside>
+
+    <main id="main" tabindex="-1">
 
     <!-- PORTRAIT -->
     <section id="portrait" class="section" data-io aria-labelledby="portrait-title">
@@ -121,7 +154,7 @@
 <section id="about" class="section" aria-labelledby="about-title">
   <h2 id="about-title" class="section-title">About Me</h2>
   <figure class="about-hero">
-    <img src="uploads/ProfileA1.JPG" alt="Portrait of Tessa Bennion" />
+    <img src="uploads/ProfileA1.JPG" alt="Portrait of Tessa Bennion" width="280" height="280" decoding="async" loading="lazy" />
   </figure>
   <div class="about-copy">
     <p><strong>Tessa Bennion</strong> is an academic painter working in oil, charcoal, and graphite. Trained at the Barcelona Academy of Art, she draws on the rigorous traditions that shaped masters like Velázquez, Picasso, and Goya while following her own path of expression. Whether painting portraits, still lifes, or plein air studies, she approaches each work with discipline, reverence, and a desire to honor the great tradition of art.</p>
@@ -149,7 +182,8 @@
       </div>
     </section>
 
-  </main>
+    </main>
+  </div>
 
   <!-- ===================== Bottom Dock (thumb-reachable nav) ===================== -->
   <nav class="bottom-dock" aria-label="Quick Sections">
